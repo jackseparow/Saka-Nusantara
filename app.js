@@ -1,26 +1,59 @@
-// Variable Global 3D & Simulasi Fisika
+// Variable Global 3D, Splitter, & Fisika
 let scene, camera, renderer, controls;
 let worldGroup, gridHelper;
 let workspace;
 let isQuaking = false;
 let quakeTime = 0;
 
-// Menyimpan data fisik objek kayu
 let activeWoodComponents = [];
-
-const matSoko    = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
-const matBlandar = new THREE.MeshLambertMaterial({ color: 0xCD853F });
-const matAnder   = new THREE.MeshLambertMaterial({ color: 0xD2691E });
-const matUmpak   = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
 
 window.addEventListener('load', () => {
   setTimeout(() => {
     initBlockly();
     initThreeJS();
+    initSplitter();
     updateSimulation();
   }, 100);
 });
 
+// 1. Fitur Drag Splitter (Resizable Panel)
+function initSplitter() {
+  const splitter = document.getElementById('dragSplitter');
+  const leftPanel = document.getElementById('blocklyDiv');
+  const container = document.getElementById('main-container');
+  let isDragging = false;
+
+  splitter.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    document.body.style.cursor = 'col-resize';
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    
+    const containerRect = container.getBoundingClientRect();
+    let newLeftWidth = e.clientX - containerRect.left;
+    
+    // Batas minimum & maksimum panel
+    if (newLeftWidth < 200) newLeftWidth = 200;
+    if (newLeftWidth > containerRect.width - 200) newLeftWidth = containerRect.width - 200;
+
+    leftPanel.style.width = `${newLeftWidth}px`;
+    
+    // Trigger Resize Blockly & Three.js Canvas
+    if (workspace) Blockly.svgResize(workspace);
+    onWindowResize();
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isDragging) {
+      isDragging = false;
+      document.body.style.cursor = 'default';
+    }
+  });
+}
+
+// 2. Inisialisasi Blockly
 function initBlockly() {
   const blocklyArea = document.getElementById('blocklyDiv');
   const toolboxXml = document.getElementById('toolbox');
@@ -36,6 +69,7 @@ function initBlockly() {
   workspace.addChangeListener(updateSimulation);
 }
 
+// 3. Inisialisasi Three.js Canvas
 function initThreeJS() {
   const container = document.getElementById('canvas3DContainer');
   if (!container) return;
@@ -83,26 +117,26 @@ function initThreeJS() {
       gridHelper.position.x = shakeX;
       gridHelper.position.z = shakeZ;
 
-      // Evaluasi Perilaku Fisika Tiap Kayu
+      // Evaluasi Perilaku Fisika Tiap Kayu saat Gempa
       activeWoodComponents.forEach((item) => {
         const mesh = item.mesh;
 
         if (item.jointStatus === 'NO_JOINT') {
-          // KASUS 1: Roboh & Ambruk ke Tanah (Tanpa Sambungan)
+          // KASUS 1: Roboh & Ambruk ke Tanah
           if (mesh.position.y > 0.3) {
-            mesh.position.y -= 0.15; // Jatuh gravitasi
-            mesh.rotation.x += 0.08; // Terguling
+            mesh.position.y -= 0.15;
+            mesh.rotation.x += 0.08;
             mesh.rotation.z += 0.08;
             mesh.position.x += (Math.random() - 0.5) * 0.1;
           } else {
-            mesh.position.y = 0.3; // Tergeletak di tanah
+            mesh.position.y = 0.3;
           }
         } else if (item.jointStatus === 'LOOSE') {
-          // KASUS 2: Mleyot Permanen (Lubang Longgar/Renggang)
-          mesh.rotation.z = Math.sin(quakeTime) * 0.15 + 0.25; // Mleyot miring
+          // KASUS 2: Mleyot Permanen (Sumbu Miring)
+          mesh.rotation.z = Math.sin(quakeTime) * 0.15 + 0.25;
           mesh.rotation.x = 0.1;
         } else if (item.jointStatus === 'PRECISE') {
-          // KASUS 3: Meredam Gempa Secara Fleksibel & Tetap Kokoh
+          // KASUS 3: Meredam Gempa Secara Fleksibel & Kokoh
           mesh.rotation.z = Math.sin(quakeTime * 2) * 0.03;
         }
       });
@@ -115,13 +149,17 @@ function initThreeJS() {
   }
   animate();
 
-  window.addEventListener('resize', () => {
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-    renderer.setSize(w, h);
-  });
+  window.addEventListener('resize', onWindowResize);
+}
+
+function onWindowResize() {
+  const container = document.getElementById('canvas3DContainer');
+  if (!container || !camera || !renderer) return;
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
 }
 
 function resetCameraHome() {
@@ -146,7 +184,7 @@ function zoomOutCamera() {
   }
 }
 
-// Handler Simulasi Uji Gempa
+// 4. Handler Simulasi Uji Gempa (Pengunci & Evaluator)
 function toggleEarthquake() {
   isQuaking = !isQuaking;
   const btn = document.getElementById('btnQuake');
@@ -155,16 +193,34 @@ function toggleEarthquake() {
   if (isQuaking) {
     btn.classList.add('active');
     btn.innerText = '⏹️ Hentikan Gempa';
-    status.innerText = '🫨 Gempa Berlangsung! Memeriksa Ketahanan...';
-    status.style.color = '#e65100';
+    
+    // Evaluasi Ketahanan Gempa Setelah Tombol Diklik
+    let hasNoJoint = activeWoodComponents.some(c => c.jointStatus === 'NO_JOINT');
+    let hasLoose   = activeWoodComponents.some(c => c.jointStatus === 'LOOSE');
+
+    if (activeWoodComponents.length === 0) {
+      status.innerText = 'Status: Belum ada kayu untuk diuji!';
+      status.style.color = '#666';
+    } else if (hasNoJoint) {
+      status.innerText = '💥 BANGUNAN AMBRUK! (Ada kayu tanpa sambungan)';
+      status.style.color = '#d32f2f';
+    } else if (hasLoose) {
+      status.innerText = '⚠️ BANGUNAN MLEYOT! (Sambungan longgar/renggang)';
+      status.style.color = '#ff9800';
+    } else {
+      status.innerText = '✅ BANGUNAN KOKOH & TAHAN GEMPA!';
+      status.style.color = '#2e7d32';
+    }
   } else {
     btn.classList.remove('active');
     btn.innerText = '🫨 Uji Gempa';
-    updateSimulation(); // Reset posisi kayu setelah gempa
+    status.innerText = 'Status Bangunan: Siap Diuji';
+    status.style.color = '#333';
+    updateSimulation(); // Reset posisi kayu ke kondisi awal
   }
 }
 
-// Generasi Bangunan 3D Berdasarkan Logika Blok
+// 5. Re-build Bangunan 3D Berdasarkan Blok Siswa
 function updateSimulation() {
   if (!workspace || !worldGroup) return;
 
@@ -182,9 +238,6 @@ function updateSimulation() {
       buildWoodComponent(block);
     }
   });
-
-  // Update Teks Status
-  evalOverallStatus();
 }
 
 function buildWoodComponent(block) {
@@ -193,20 +246,25 @@ function buildWoodComponent(block) {
   const l = parseFloat(block.getFieldValue('DIM_L'));
   const t = parseFloat(block.getFieldValue('DIM_T'));
 
-  let mat = matSoko;
-  if (jenis === 'BLANDAR') mat = matBlandar;
-  else if (jenis === 'ANDER') mat = matAnder;
-  else if (jenis === 'UMPAK') mat = matUmpak;
+  // Default Material
+  let colorVal = 0x8B5A2B;
+  if (jenis === 'BLANDAR') colorVal = 0xCD853F;
+  else if (jenis === 'ANDER') colorVal = 0xD2691E;
+  else if (jenis === 'UMPAK') colorVal = 0x7F8C8D;
+
+  const mat = new THREE.MeshLambertMaterial({
+    color: colorVal,
+    transparent: false,
+    opacity: 1.0
+  });
 
   const geo = new THREE.BoxGeometry(p, t, l);
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.y = t / 2; // Default berdiri di tanah
+  mesh.position.y = t / 2;
 
-  let jointStatus = 'NO_JOINT'; // Default: Tidak ada sambungan
-  let sizeLubang = 0;
-  let sizePasak = 0;
+  let jointStatus = 'NO_JOINT';
 
-  // Cek Blok Bersarang di Dalamnya
+  // Iterasi Blok Modifikasi Bersarang
   let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
   while (innerBlock) {
     if (innerBlock.type === 'transformasi_posisi') {
@@ -216,19 +274,24 @@ function buildWoodComponent(block) {
     } else if (innerBlock.type === 'transformasi_rotasi') {
       const rotY = parseFloat(innerBlock.getFieldValue('ROT_Y'));
       mesh.rotation.y += (rotY * Math.PI) / 180;
+    } else if (innerBlock.type === 'transformasi_tampilan') {
+      const c = parseInt(innerBlock.getFieldValue('WARNA'));
+      const op = parseFloat(innerBlock.getFieldValue('OPASITAS'));
+      mesh.material.color.setHex(c);
+      mesh.material.opacity = op;
+      mesh.material.transparent = op < 1.0;
     } else if (innerBlock.type === 'fungsi_sambungan') {
-      sizeLubang = parseInt(innerBlock.getFieldValue('UKURAN_LUBANG'));
-      sizePasak  = parseInt(innerBlock.getFieldValue('UKURAN_PASAK'));
+      const sizeLubang = parseInt(innerBlock.getFieldValue('UKURAN_LUBANG'));
+      const sizePasak  = parseInt(innerBlock.getFieldValue('UKURAN_PASAK'));
 
-      // Analisis Presisi Kuncian
       if (sizePasak === 0) {
-        jointStatus = 'LOOSE'; // Mleyot (Tanpa Pasak)
+        jointStatus = 'LOOSE';
       } else if (sizePasak === sizeLubang) {
-        jointStatus = 'PRECISE'; // Presisi & Kokoh
+        jointStatus = 'PRECISE';
       } else if (sizePasak < sizeLubang) {
-        jointStatus = 'LOOSE'; // Longgar -> Mleyot
+        jointStatus = 'LOOSE';
       } else {
-        jointStatus = 'NO_JOINT'; // Terlalu besar -> Pasak tidak masuk -> Ambruk
+        jointStatus = 'NO_JOINT'; // Pasak kegedean / tidak muat
       }
     }
     innerBlock = innerBlock.getNextBlock();
@@ -236,26 +299,4 @@ function buildWoodComponent(block) {
 
   worldGroup.add(mesh);
   activeWoodComponents.push({ mesh, jointStatus, jenis });
-}
-
-function evalOverallStatus() {
-  const status = document.getElementById('quakeStatus');
-  if (!status) return;
-
-  let hasNoJoint = activeWoodComponents.some(c => c.jointStatus === 'NO_JOINT');
-  let hasLoose   = activeWoodComponents.some(c => c.jointStatus === 'LOOSE');
-
-  if (activeWoodComponents.length === 0) {
-    status.innerText = 'Status Bangunan: Belum Ada Kayu';
-    status.style.color = '#666';
-  } else if (hasNoJoint) {
-    status.innerText = '⚠️ Bahaya: Ada Kayu Tanpa Sambungan (Rentan Ambruk!)';
-    status.style.color = '#d32f2f';
-  } else if (hasLoose) {
-    status.innerText = '⚠️ Peringatan: Sambungan Longgar / Renggang (Bisa Mleyot!)';
-    status.style.color = '#ff9800';
-  } else {
-    status.innerText = '✅ Bangunan Sangat Presisi & Tahan Gempa!';
-    status.style.color = '#2e7d32';
-  }
 }
