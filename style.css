@@ -11,6 +11,7 @@ body {
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  user-select: none;
 }
 
 .main-header {
@@ -90,24 +91,41 @@ body {
   background-color: #fff;
 }
 
-/* Container Penuh */
+/* Splitter Container (Resizable) */
 #main-container {
   display: flex;
   flex: 1;
   height: calc(100vh - 65px);
+  width: 100vw;
+  position: relative;
 }
 
 #blocklyDiv {
   height: 100%;
-  width: 55%;
+  width: 50%; /* Initial width */
+  min-width: 200px;
+}
+
+/* Garis Resizer/Splitter */
+#dragSplitter {
+  width: 8px;
+  height: 100%;
+  background-color: #ccc;
+  cursor: col-resize;
+  transition: background-color 0.2s;
+  z-index: 10;
+}
+
+#dragSplitter:hover, #dragSplitter:active {
+  background-color: #2e7d32;
 }
 
 #rightPanel {
-  width: 45%;
+  flex: 1;
   height: 100%;
   background-color: #e0e6ed;
-  border-left: 2px solid #ccc;
   position: relative;
+  min-width: 200px;
 }
 
 #canvas3DContainer {
@@ -116,7 +134,7 @@ body {
   position: relative;
 }
 
-/* Toolbar Tinkercad & Tombol Uji Gempa */
+/* Toolbar Navigasi Kamera & Gempa */
 .tinkercad-toolbar {
   position: absolute;
   top: 15px;
@@ -140,7 +158,6 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0 8px;
-  transition: all 0.2s ease;
   font-weight: 600;
 }
 
@@ -167,15 +184,9 @@ body {
 
 #btnQuake.active {
   background-color: #ff9800;
-  animation: pulse 0.8s infinite alternate;
 }
 
-@keyframes pulse {
-  from { transform: scale(1); }
-  to { transform: scale(1.05); }
-}
-
-/* Status Banner Gempa */
+/* Status Banner Netral */
 .quake-status-box {
   position: absolute;
   top: 15px;
@@ -185,7 +196,7 @@ body {
   border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #2e7d32;
+  color: #333;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   border: 1px solid #ccc;
 }
