@@ -45,9 +45,21 @@
     <!-- Area Preview 3D & Status (Kanan) -->
     <div id="rightPanel">
       
-      <!-- Canvas Render Three.js -->
+      <!-- Canvas Render Three.js ala Tinkercad -->
       <div id="canvas3DContainer">
-        <div id="canvasLabel">Pratinjau Kayu 3D (Putar & Zoom dengan Mouse)</div>
+        <!-- Toolbar Navigasi Kamera Tinkercad -->
+        <div class="tinkercad-toolbar">
+          <button onclick="resetCameraHome()" title="Kembali ke Tampilan Awal (Home)">🏠</button>
+          <button onclick="zoomInCamera()" title="Perbesar (Zoom In)">➕</button>
+          <button onclick="zoomOutCamera()" title="Perkecil (Zoom Out)">➖</button>
+        </div>
+
+        <!-- Legenda Workplane & Sumbu -->
+        <div class="axes-legend">
+          <span class="axis-item">🟦 Workplane</span>
+          <span class="axis-item">🔴 X (Kanan/Kiri)</span>
+          <span class="axis-item">🟢 Y (Atas/Bawah)</span>
+        </div>
       </div>
 
       <!-- Panel Informasi Evaluasi -->
