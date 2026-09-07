@@ -1,24 +1,43 @@
 // Variable Global 3D
 let scene, camera, renderer, controls;
-let woodGroup; // Grup objek 3D untuk kayu
+let woodGroup;
+let workspace;
 
 // Material Kayu
-const woodMaterial1 = new THREE.MeshLambertMaterial({ color: 0x8B5A2B }); // Kayu Utama (Cokelat Tua)
-const woodMaterial2 = new THREE.MeshLambertMaterial({ color: 0xCD853F }); // Kayu Kedua (Cokelat Muda)
-const pinMaterial   = new THREE.MeshLambertMaterial({ color: 0xD2691E }); // Pasak (Cokelat Jingga)
+const woodMaterial1 = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
+const woodMaterial2 = new THREE.MeshLambertMaterial({ color: 0xCD853F });
+const pinMaterial   = new THREE.MeshLambertMaterial({ color: 0xD2691E });
 
-// Inisialisasi Aplikasi
-window.addEventListener('DOMContentLoaded', () => {
-  initBlockly();
-  initThreeJS();
-  updateSimulation();
+// Pastikan DOM dan Pustaka Pihak Ketiga Sudah Siap
+window.addEventListener('load', () => {
+  // Delay kecil untuk memastikan CDN Blockly dan XML Toolbox benar-benar siap
+  setTimeout(() => {
+    initBlockly();
+    initThreeJS();
+    updateSimulation();
+  }, 100);
 });
 
-// 1. Inisialisasi Blockly
-let workspace;
+// 1. Inisialisasi Blockly dengan Validasi Cek
 function initBlockly() {
+  const blocklyArea = document.getElementById('blocklyDiv');
+  const toolboxXml = document.getElementById('toolbox');
+
+  // Cek apakah perpustakaan Blockly dan elemen HTML ada
+  if (typeof Blockly === 'undefined') {
+    console.error('Pustaka Blockly gagal dimuat dari CDN.');
+    alert('Blockly gagal dimuat. Periksa koneksi internet kamu untuk memuat CDN Blockly.');
+    return;
+  }
+
+  if (!blocklyArea || !toolboxXml) {
+    console.error('Elemen #blocklyDiv atau #toolbox tidak ditemukan di HTML.');
+    return;
+  }
+
+  // Inject Blockly
   workspace = Blockly.inject('blocklyDiv', {
-    toolbox: document.getElementById('toolbox'),
+    toolbox: toolboxXml,
     scrollbars: true,
     zoom: { controls: true, wheel: true }
   });
@@ -29,9 +48,10 @@ function initBlockly() {
 // 2. Inisialisasi Engine Three.js Ala Tinkercad
 function initThreeJS() {
   const container = document.getElementById('canvas3DContainer');
+  if (!container) return;
   
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xe0e6ed); // Latar terang Tinkercad
+  scene.background = new THREE.Color(0xe0e6ed);
 
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
   camera.position.set(8, 7, 9);
@@ -44,7 +64,6 @@ function initThreeJS() {
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  // Pencahayaan Terang Khas Tinkercad
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(ambientLight);
 
@@ -53,20 +72,16 @@ function initThreeJS() {
   dirLight.castShadow = true;
   scene.add(dirLight);
 
-  // Grup Induk Objek Kayu
   woodGroup = new THREE.Group();
   scene.add(woodGroup);
 
-  // Workplane Grid Biru Muda Ala Tinkercad
   const gridHelper = new THREE.GridHelper(12, 24, 0x007acc, 0xa0c4df);
   gridHelper.position.y = -0.5;
   scene.add(gridHelper);
 
-  // Sumbu Koordinat
   const axesHelper = new THREE.AxesHelper(4);
   scene.add(axesHelper);
 
-  // Loop Render
   function animate() {
     requestAnimationFrame(animate);
     controls.update();
@@ -74,7 +89,6 @@ function initThreeJS() {
   }
   animate();
 
-  // Responsive Resize
   window.addEventListener('resize', () => {
     const w = container.clientWidth;
     const h = container.clientHeight;
@@ -84,25 +98,32 @@ function initThreeJS() {
   });
 }
 
-// Handler Tombol Kamera Tinkercad
 function resetCameraHome() {
-  camera.position.set(8, 7, 9);
-  controls.target.set(0, 0, 0);
-  controls.update();
+  if (camera && controls) {
+    camera.position.set(8, 7, 9);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  }
 }
 
 function zoomInCamera() {
-  camera.position.multiplyScalar(0.85);
-  controls.update();
+  if (camera && controls) {
+    camera.position.multiplyScalar(0.85);
+    controls.update();
+  }
 }
 
 function zoomOutCamera() {
-  camera.position.multiplyScalar(1.15);
-  controls.update();
+  if (camera && controls) {
+    camera.position.multiplyScalar(1.15);
+    controls.update();
+  }
 }
 
 // 3. Evaluasi Logika & Generasi Model Kayu 3D
 function updateSimulation() {
+  if (!workspace) return;
+
   const topBlocks = workspace.getTopBlocks(true);
   
   if (topBlocks.length === 0 || topBlocks[0].type !== 'fungsi_sambungan') {
@@ -135,7 +156,6 @@ function updateSimulation() {
     }
   }
 
-  // Hitung Skor Kekuatan
   let score = 0;
   if (teknik === 'DOVETAIL') score += 40;
   else if (teknik === 'MORTISE_TENON') score += 30;
@@ -144,10 +164,7 @@ function updateSimulation() {
   score += (tumpukan * 15);
   if (pakaiPasak === 'YA') score += 20;
 
-  // Update UI Text
   updateUIText(fungsi, teknik, arah, tumpukan, pakaiPasak, score);
-
-  // Re-build 3D Model Kayu
   build3DWoodModel({ fungsi, teknik, arah, tumpukan, pakaiPasak });
 }
 
@@ -199,6 +216,7 @@ function updateUIText(fungsi, teknik, arah, tumpukan, pakaiPasak, score) {
 }
 
 function clearWoodScene() {
+  if (!woodGroup) return;
   while (woodGroup.children.length > 0) {
     const obj = woodGroup.children[0];
     if (obj.geometry) obj.geometry.dispose();
@@ -206,34 +224,30 @@ function clearWoodScene() {
   }
 }
 
-// 4. Pembentuk Geometri Kayu Berdasarkan Parameter Logika
 function build3DWoodModel(config) {
   clearWoodScene();
 
   const { fungsi, tumpukan, pakaiPasak } = config;
 
-  // Kayu 1 (Selalu Ada)
   const wood1Geo = new THREE.BoxGeometry(1, 1, 4);
   const wood1 = new THREE.Mesh(wood1Geo, woodMaterial1);
   woodGroup.add(wood1);
 
-  // Kayu 2 (Diposisikan berdasarkan Orientasi Fungsi)
   const wood2Geo = new THREE.BoxGeometry(1, 1, 4);
   const wood2 = new THREE.Mesh(wood2Geo, woodMaterial2);
 
   if (fungsi === 'LURUS') {
-    wood2.position.set(0, 0, 3.5); // Menyambung lurus di sumbu Z
+    wood2.position.set(0, 0, 3.5);
   } else if (fungsi === 'SUDUT') {
-    wood2.rotation.y = Math.PI / 2; // Berputar 90 derajat
+    wood2.rotation.y = Math.PI / 2;
     wood2.position.set(1.5, 0, 1.5);
   } else if (fungsi === 'SILANG') {
     wood2.rotation.y = Math.PI / 2;
-    wood2.position.set(0, 0.8, 0); // Menumpuk silang (+)
+    wood2.position.set(0, 0.8, 0);
   }
 
   woodGroup.add(wood2);
 
-  // Visualisasi Jumlah Keratan / Tumpukan (Multilayer Notch)
   if (tumpukan > 0) {
     for (let i = 0; i < tumpukan; i++) {
       const notchGeo = new THREE.BoxGeometry(1.02, 0.2, 0.4);
@@ -244,7 +258,6 @@ function build3DWoodModel(config) {
     }
   }
 
-  // Visualisasi Pasak Tambahan
   if (pakaiPasak === 'YA') {
     const pinGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.6, 16);
     const pin = new THREE.Mesh(pinGeo, pinMaterial);
