@@ -121,20 +121,63 @@ body {
 #canvas3DContainer {
   height: 45%;
   width: 100%;
-  background-color: #1e1e1e;
+  background-color: #e0e6ed;
   position: relative;
 }
 
-#canvasLabel {
+/* Toolbar Navigasi Kamera Tinkercad */
+.tinkercad-toolbar {
   position: absolute;
-  top: 10px;
+  top: 15px;
+  left: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 5;
+}
+
+.tinkercad-toolbar button {
+  width: 36px;
+  height: 36px;
+  background-color: #ffffff;
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.tinkercad-toolbar button:hover {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  transform: scale(1.05);
+}
+
+/* Legenda Workplane & Sumbu */
+.axes-legend {
+  position: absolute;
+  bottom: 10px;
   left: 10px;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.6);
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: flex;
+  gap: 12px;
+  font-size: 0.75rem;
+  color: #333;
   pointer-events: none;
+  backdrop-filter: blur(2px);
+  border: 1px solid #ccc;
+}
+
+.axis-item {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
 }
 
 #previewPanel {
