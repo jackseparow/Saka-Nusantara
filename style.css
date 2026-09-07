@@ -13,7 +13,6 @@ body {
   overflow: hidden;
 }
 
-/* Header Banner Utama Saka Nusantara */
 .main-header {
   background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
   color: white;
@@ -39,21 +38,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .logo-box img {
   height: 42px;
   width: 42px;
   object-fit: contain;
-  border-radius: 4px;
 }
 
 .header-titles h1 {
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
   color: #ffffff;
 }
 
@@ -61,7 +57,6 @@ body {
   margin: 2px 0 0 0;
   font-size: 0.78rem;
   color: #e8f5e9;
-  font-weight: 400;
 }
 
 .header-right {
@@ -76,8 +71,6 @@ body {
   background-color: rgba(255, 255, 255, 0.15);
   padding: 4px 10px;
   border-radius: 20px;
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .mascot-tag {
@@ -95,10 +88,9 @@ body {
   object-fit: contain;
   border-radius: 50%;
   background-color: #fff;
-  padding: 2px;
 }
 
-/* Layout Container */
+/* Container Penuh */
 #main-container {
   display: flex;
   flex: 1;
@@ -112,20 +104,19 @@ body {
 
 #rightPanel {
   width: 45%;
-  display: flex;
-  flex-direction: column;
-  background-color: #eef1f5;
-  border-left: 2px solid #ccc;
-}
-
-#canvas3DContainer {
-  height: 45%;
-  width: 100%;
+  height: 100%;
   background-color: #e0e6ed;
+  border-left: 2px solid #ccc;
   position: relative;
 }
 
-/* Toolbar Navigasi Kamera Tinkercad */
+#canvas3DContainer {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+/* Toolbar Tinkercad & Tombol Uji Gempa */
 .tinkercad-toolbar {
   position: absolute;
   top: 15px;
@@ -137,27 +128,68 @@ body {
 }
 
 .tinkercad-toolbar button {
-  width: 36px;
+  min-width: 36px;
   height: 36px;
   background-color: #ffffff;
   border: 1px solid #cccccc;
   border-radius: 6px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0 8px;
   transition: all 0.2s ease;
+  font-weight: 600;
 }
 
 .tinkercad-toolbar button:hover {
   background-color: #e3f2fd;
   border-color: #2196f3;
-  transform: scale(1.05);
 }
 
-/* Legenda Workplane & Sumbu */
+.toolbar-divider {
+  border: 0;
+  border-top: 1px solid #ccc;
+  margin: 4px 0;
+}
+
+#btnQuake {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+}
+
+#btnQuake:hover {
+  background-color: #b71c1c;
+}
+
+#btnQuake.active {
+  background-color: #ff9800;
+  animation: pulse 0.8s infinite alternate;
+}
+
+@keyframes pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
+}
+
+/* Status Banner Gempa */
+.quake-status-box {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #2e7d32;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  border: 1px solid #ccc;
+}
+
 .axes-legend {
   position: absolute;
   bottom: 10px;
@@ -170,70 +202,9 @@ body {
   font-size: 0.75rem;
   color: #333;
   pointer-events: none;
-  backdrop-filter: blur(2px);
   border: 1px solid #ccc;
 }
 
 .axis-item {
-  display: flex;
-  align-items: center;
   font-weight: 600;
-}
-
-#previewPanel {
-  height: 55%;
-  padding: 15px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.card {
-  background: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 12px 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.card h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #333;
-  font-size: 1rem;
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-  font-size: 0.9rem;
-}
-
-.badge {
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  color: white;
-  background-color: #888;
-  font-size: 0.85rem;
-}
-
-.badge-success { background-color: #4caf50; }
-.badge-warning { background-color: #ff9800; }
-.badge-info { background-color: #2196f3; }
-
-#codeOutput {
-  background-color: #272822;
-  color: #a6e22e;
-  padding: 10px;
-  border-radius: 6px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.8rem;
-  white-space: pre-wrap;
-  margin: 0;
-  max-height: 120px;
-  overflow-y: auto;
 }
