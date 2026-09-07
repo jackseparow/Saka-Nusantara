@@ -1,14 +1,16 @@
-// Variable Global 3D & Blockly
+// Variable Global 3D & Simulasi
 let scene, camera, renderer, controls;
-let woodGroup;
+let worldGroup, gridHelper;
 let workspace;
+let isQuaking = false;
+let quakeTime = 0;
 
-// Material Kayu
-const woodMaterial1 = new THREE.MeshLambertMaterial({ color: 0x8B5A2B }); // Kayu Utama (Cokelat Tua)
-const woodMaterial2 = new THREE.MeshLambertMaterial({ color: 0xCD853F }); // Kayu Kedua (Cokelat Muda)
-const pinMaterial   = new THREE.MeshLambertMaterial({ color: 0xD2691E }); // Pasak (Cokelat Jingga)
+// Material Kayu & Batu Tradisional
+const matSoko    = new THREE.MeshLambertMaterial({ color: 0x8B5A2B }); // Cokelat Tua
+const matBlandar = new THREE.MeshLambertMaterial({ color: 0xCD853F }); // Cokelat Muda
+const matAnder   = new THREE.MeshLambertMaterial({ color: 0xD2691E }); // Cokelat Terang
+const matUmpak   = new THREE.MeshLambertMaterial({ color: 0x7f8c8d }); // Abu-abu Batu
 
-// Eksekusi Pemuatan Aman setelah Seluruh Halaman Siap
 window.addEventListener('load', () => {
   setTimeout(() => {
     initBlockly();
@@ -17,20 +19,11 @@ window.addEventListener('load', () => {
   }, 100);
 });
 
-// 1. Inisialisasi Workspace Blockly
 function initBlockly() {
   const blocklyArea = document.getElementById('blocklyDiv');
   const toolboxXml = document.getElementById('toolbox');
 
-  if (typeof Blockly === 'undefined') {
-    console.error('Pustaka Blockly belum termuat dari CDN.');
-    return;
-  }
-
-  if (!blocklyArea || !toolboxXml) {
-    console.error('Elemen HTML Blockly tidak ditemukan.');
-    return;
-  }
+  if (typeof Blockly === 'undefined' || !blocklyArea || !toolboxXml) return;
 
   workspace = Blockly.inject('blocklyDiv', {
     toolbox: toolboxXml,
@@ -41,16 +34,15 @@ function initBlockly() {
   workspace.addChangeListener(updateSimulation);
 }
 
-// 2. Inisialisasi Engine Three.js Ala Tinkercad
 function initThreeJS() {
   const container = document.getElementById('canvas3DContainer');
   if (!container) return;
-  
+
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xe0e6ed); // Latar belakang terang Tinkercad
+  scene.background = new THREE.Color(0xe0e6ed);
 
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(8, 7, 9);
+  camera.position.set(10, 8, 12);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -60,37 +52,51 @@ function initThreeJS() {
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
 
-  // Pencahayaan Terang
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(ambientLight);
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-  dirLight.position.set(10, 20, 10);
+  dirLight.position.set(15, 25, 15);
   dirLight.castShadow = true;
   scene.add(dirLight);
 
-  // Grup Induk Objek Kayu
-  woodGroup = new THREE.Group();
-  scene.add(woodGroup);
+  // Grup Induk Komponen Struktur
+  worldGroup = new THREE.Group();
+  scene.add(worldGroup);
 
-  // Workplane Grid Biru Muda Ala Tinkercad
-  const gridHelper = new THREE.GridHelper(12, 24, 0x007acc, 0xa0c4df);
-  gridHelper.position.y = -0.5;
+  // Workplane Tinkercad
+  gridHelper = new THREE.GridHelper(16, 32, 0x007acc, 0xa0c4df);
+  gridHelper.position.y = 0;
   scene.add(gridHelper);
 
-  // Sumbu Koordinat
   const axesHelper = new THREE.AxesHelper(4);
   scene.add(axesHelper);
 
-  // Loop Render
+  // Loop Render & Efek Simulasi Gempa
   function animate() {
     requestAnimationFrame(animate);
+
+    if (isQuaking) {
+      quakeTime += 0.2;
+      // Getaran Tanah Gempa
+      const shakeX = Math.sin(quakeTime * 3) * 0.15;
+      const shakeZ = Math.cos(quakeTime * 2.5) * 0.15;
+      gridHelper.position.x = shakeX;
+      gridHelper.position.z = shakeZ;
+      worldGroup.position.x = shakeX * 0.8;
+      worldGroup.position.z = shakeZ * 0.8;
+      worldGroup.rotation.z = Math.sin(quakeTime * 2) * 0.02;
+    } else {
+      gridHelper.position.set(0, 0, 0);
+      worldGroup.position.set(0, 0, 0);
+      worldGroup.rotation.z = 0;
+    }
+
     controls.update();
     renderer.render(scene, camera);
   }
   animate();
 
-  // Responsive Canvas Resize
   window.addEventListener('resize', () => {
     const w = container.clientWidth;
     const h = container.clientHeight;
@@ -100,11 +106,10 @@ function initThreeJS() {
   });
 }
 
-// Handler Navigasi Kamera Tinkercad
 function resetCameraHome() {
   if (camera && controls) {
-    camera.position.set(8, 7, 9);
-    controls.target.set(0, 0, 0);
+    camera.position.set(10, 8, 12);
+    controls.target.set(0, 2, 0);
     controls.update();
   }
 }
@@ -123,159 +128,88 @@ function zoomOutCamera() {
   }
 }
 
-// 3. Evaluasi Logika Blok & Generasi Model Kayu 3D
+// Simulasi Uji Gempa
+function toggleEarthquake() {
+  isQuaking = !isQuaking;
+  const btn = document.getElementById('btnQuake');
+  const status = document.getElementById('quakeStatus');
+
+  if (isQuaking) {
+    btn.classList.add('active');
+    btn.innerText = '⏹️ Hentikan Gempa';
+    status.innerText = '🫨 Simulasi Gempa Berlangsung...';
+    status.style.color = '#e65100';
+  } else {
+    btn.classList.remove('active');
+    btn.innerText = '🫨 Uji Gempa';
+    status.innerText = 'Status Bangunan: Tahan Gempa (Tersambung Presisi)';
+    status.style.color = '#2e7d32';
+  }
+}
+
+// Re-build Konstruksi 3D Berdasarkan Blok Siswa
 function updateSimulation() {
-  if (!workspace) return;
+  if (!workspace || !worldGroup) return;
+
+  // Bersihkan Komponen Lama
+  while (worldGroup.children.length > 0) {
+    const obj = worldGroup.children[0];
+    if (obj.geometry) obj.geometry.dispose();
+    worldGroup.remove(obj);
+  }
 
   const topBlocks = workspace.getTopBlocks(true);
-  
-  if (topBlocks.length === 0 || topBlocks[0].type !== 'fungsi_sambungan') {
-    resetUI();
-    clearWoodScene();
-    return;
-  }
 
-  const rootBlock = topBlocks[0];
-  const fungsi = rootBlock.getFieldValue('FUNGSI');
-  
-  let teknik = 'Belum Dipilih';
-  let arah = '-';
-  let tumpukan = 0;
-  let pakaiPasak = 'TIDAK';
-
-  const teknikTarget = rootBlock.getInputTargetBlock('TEKNIK');
-  if (teknikTarget) {
-    teknik = teknikTarget.getFieldValue('TEKNIK_NAME');
-
-    let modifTarget = teknikTarget.getInputTargetBlock('MODIFIKASI');
-    while (modifTarget) {
-      if (modifTarget.type === 'modifikasi_keratan') {
-        arah = modifTarget.getFieldValue('ARAH');
-        tumpukan = parseInt(modifTarget.getFieldValue('TUMPUKAN'));
-      } else if (modifTarget.type === 'opsi_pasak') {
-        pakaiPasak = modifTarget.getFieldValue('PAKAI_PASAK');
-      }
-      modifTarget = modifTarget.getNextBlock();
+  topBlocks.forEach((block) => {
+    if (block.type === 'tambah_benda_kerja') {
+      buildWoodComponent(block);
     }
-  }
-
-  // Kalkulasi Skor Kekuatan
-  let score = 0;
-  if (teknik === 'DOVETAIL') score += 40;
-  else if (teknik === 'MORTISE_TENON') score += 30;
-  else if (teknik === 'LAP_JOINT') score += 15;
-
-  score += (tumpukan * 15);
-  if (pakaiPasak === 'YA') score += 20;
-
-  updateUIText(fungsi, teknik, arah, tumpukan, pakaiPasak, score);
-  build3DWoodModel({ fungsi, teknik, arah, tumpukan, pakaiPasak });
+  });
 }
 
-function resetUI() {
-  document.getElementById('resFungsi').innerText = '-';
-  document.getElementById('resTeknik').innerText = '-';
-  document.getElementById('resArah').innerText = '-';
-  document.getElementById('resTumpukan').innerText = '-';
-  document.getElementById('resPasak').innerText = '-';
-  document.getElementById('resKekuatan').innerText = 'Belum Ada';
-  document.getElementById('resKekuatan').className = 'badge';
-  document.getElementById('codeOutput').innerText = '// Masukkan blok Kategori Fungsi sebagai dasar.';
-}
+function buildWoodComponent(block) {
+  const jenis = block.getFieldValue('JENIS_BENDA');
+  let mesh;
 
-function updateUIText(fungsi, teknik, arah, tumpukan, pakaiPasak, score) {
-  let kekuatan = 'Rendah';
-  let badgeClass = 'badge-warning';
-  if (score >= 65) {
-    kekuatan = 'Sangat Kokoh';
-    badgeClass = 'badge-success';
-  } else if (score >= 40) {
-    kekuatan = 'Cukup Kuat';
-    badgeClass = 'badge-info';
+  // Render Bentuk Geometri Berdasarkan Jenis Komponen
+  if (jenis === 'SOKO') {
+    // Soko Guru (Tiang Vertikal)
+    const geo = new THREE.BoxGeometry(0.8, 4, 0.8);
+    mesh = new THREE.Mesh(geo, matSoko);
+    mesh.position.y = 2; // Berdiri di atas workplane
+  } else if (jenis === 'BLANDAR') {
+    // Blandar (Balok Mendatar)
+    const geo = new THREE.BoxGeometry(6, 0.6, 0.6);
+    mesh = new THREE.Mesh(geo, matBlandar);
+    mesh.position.y = 4.3;
+  } else if (jenis === 'ANDER') {
+    // Ander / Pengunci
+    const geo = new THREE.BoxGeometry(0.5, 1.5, 0.5);
+    mesh = new THREE.Mesh(geo, matAnder);
+    mesh.position.y = 5.2;
+  } else if (jenis === 'UMPAK') {
+    // Umpak (Batu Alas)
+    const geo = new THREE.CylinderGeometry(0.7, 0.9, 0.6, 8);
+    mesh = new THREE.Mesh(geo, matUmpak);
+    mesh.position.y = 0.3;
   }
 
-  document.getElementById('resFungsi').innerText = fungsi;
-  document.getElementById('resTeknik').innerText = teknik;
-  document.getElementById('resArah').innerText = arah;
-  document.getElementById('resTumpukan').innerText = tumpukan > 0 ? `${tumpukan} Lapis` : '-';
-  document.getElementById('resPasak').innerText = pakaiPasak;
-  
-  const elKekuatan = document.getElementById('resKekuatan');
-  elKekuatan.innerText = kekuatan;
-  elKekuatan.className = `badge ${badgeClass}`;
-
-  const configJSON = {
-    app: "Saka Nusantara",
-    fungsi: fungsi,
-    teknik: teknik,
-    parameter: {
-      arah_keratan: arah,
-      jumlah_keratan: tumpukan,
-      dengan_pasak: pakaiPasak === 'YA'
-    },
-    calculated_strength_score: score
-  };
-
-  document.getElementById('codeOutput').innerText = JSON.stringify(configJSON, null, 2);
-}
-
-function clearWoodScene() {
-  if (!woodGroup) return;
-  while (woodGroup.children.length > 0) {
-    const obj = woodGroup.children[0];
-    if (obj.geometry) obj.geometry.dispose();
-    woodGroup.remove(obj);
-  }
-}
-
-// 4. Pembentuk Geometri Kayu Berdasarkan Parameter Logika
-function build3DWoodModel(config) {
-  clearWoodScene();
-
-  const { fungsi, tumpukan, pakaiPasak } = config;
-
-  // Kayu 1 (Selalu Ada)
-  const wood1Geo = new THREE.BoxGeometry(1, 1, 4);
-  const wood1 = new THREE.Mesh(wood1Geo, woodMaterial1);
-  woodGroup.add(wood1);
-
-  // Kayu 2 (Diposisikan berdasarkan Orientasi Fungsi)
-  const wood2Geo = new THREE.BoxGeometry(1, 1, 4);
-  const wood2 = new THREE.Mesh(wood2Geo, woodMaterial2);
-
-  if (fungsi === 'LURUS') {
-    wood2.position.set(0, 0, 3.5);
-  } else if (fungsi === 'SUDUT') {
-    wood2.rotation.y = Math.PI / 2;
-    wood2.position.set(1.5, 0, 1.5);
-  } else if (fungsi === 'SILANG') {
-    wood2.rotation.y = Math.PI / 2;
-    wood2.position.set(0, 0.8, 0);
-  }
-
-  woodGroup.add(wood2);
-
-  // Keratan / Tumpukan (Multilayer Notch)
-  if (tumpukan > 0) {
-    for (let i = 0; i < tumpukan; i++) {
-      const notchGeo = new THREE.BoxGeometry(1.02, 0.2, 0.4);
-      const notchMat = new THREE.MeshLambertMaterial({ color: 0x5c3a21 });
-      const notch = new THREE.Mesh(notchGeo, notchMat);
-      notch.position.set(0, (i * 0.25) - 0.2, 1.5);
-      woodGroup.add(notch);
+  // Iterasi Blok Transformasi Bersarang di Dalamnya
+  let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
+  while (innerBlock) {
+    if (innerBlock.type === 'transformasi_posisi') {
+      const x = parseFloat(innerBlock.getFieldValue('POS_X'));
+      const y = parseFloat(innerBlock.getFieldValue('POS_Y'));
+      const z = parseFloat(innerBlock.getFieldValue('POS_Z'));
+      mesh.position.x += x;
+      mesh.position.y += y;
+      mesh.position.z += z;
+    } else if (innerBlock.type === 'transformasi_rotasi') {
+      const rotY = parseFloat(innerBlock.getFieldValue('ROT_Y'));
+      mesh.rotation.y += (rotY * Math.PI) / 180;
     }
+    innerBlock = innerBlock.getNextBlock();
   }
 
-  // Pasak Tambahan
-  if (pakaiPasak === 'YA') {
-    const pinGeo = new THREE.CylinderGeometry(0.12, 0.12, 1.6, 16);
-    const pin = new THREE.Mesh(pinGeo, pinMaterial);
-    
-    if (fungsi === 'LURUS') {
-      pin.position.set(0, 0, 2);
-    } else {
-      pin.position.set(0, 0.2, 1.5);
-    }
-    woodGroup.add(pin);
-  }
+  worldGroup.add(mesh);
 }
