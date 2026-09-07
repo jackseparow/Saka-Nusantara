@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Saka Nusantara - Logika Sambungan Kayu Warisan Leluhur</title>
+  <title>Saka Nusantara - Arsitektur Kayu Tradisional & Simulasi Gempa</title>
   
   <link rel="stylesheet" href="style.css">
   
@@ -19,18 +19,16 @@
   <!-- Header Banner Saka Nusantara -->
   <header class="main-header">
     <div class="header-left">
-      <!-- Slot Logo Kantor / Instansi -->
       <div class="logo-box logo-office" title="Logo Kantor">
         <img src="https://via.placeholder.com/45?text=Kantor" alt="Logo Kantor" id="officeLogo">
       </div>
       <div class="header-titles">
         <h1>🪵 Saka Nusantara</h1>
-        <p class="subtitle">Logika Sambungan Kayu Warisan Leluhur</p>
+        <p class="subtitle">Logika Sambungan Kayu & Simulasi Arsitektur Tradisional</p>
       </div>
     </div>
 
     <div class="header-right">
-      <!-- Slot Maskot SiYO (Taman Numerasi) -->
       <div class="mascot-box" title="SiYO - Maskot Taman Numerasi">
         <span class="mascot-tag">Taman Numerasi</span>
         <img src="https://via.placeholder.com/50?text=SiYO" alt="SiYO Maskot" id="siyoMascot">
@@ -39,84 +37,51 @@
   </header>
 
   <div id="main-container">
-    <!-- Area Workspace Blockly (Kiri) -->
+    <!-- Area Workspace Blockly (Kiri - 55%) -->
     <div id="blocklyDiv"></div>
 
-    <!-- Area Preview 3D & Status (Kanan) -->
+    <!-- Area Preview 3D Penuh (Kanan - 45%) -->
     <div id="rightPanel">
-      
-      <!-- Canvas Render Three.js ala Tinkercad -->
       <div id="canvas3DContainer">
-        <!-- Toolbar Navigasi Kamera Tinkercad -->
+        
+        <!-- Toolbar Navigasi & Uji Gempa Ala Tinkercad -->
         <div class="tinkercad-toolbar">
           <button onclick="resetCameraHome()" title="Kembali ke Tampilan Awal (Home)">🏠</button>
           <button onclick="zoomInCamera()" title="Perbesar (Zoom In)">➕</button>
           <button onclick="zoomOutCamera()" title="Perkecil (Zoom Out)">➖</button>
+          <hr class="toolbar-divider">
+          <button id="btnQuake" onclick="toggleEarthquake()" title="Simulasi Uji Ketahanan Gempa">🫨 Uji Gempa</button>
         </div>
+
+        <!-- Indicator Status Uji Gempa -->
+        <div id="quakeStatus" class="quake-status-box">Status Bangunan: Kokoh (Siap Uji)</div>
 
         <!-- Legenda Workplane & Sumbu -->
         <div class="axes-legend">
           <span class="axis-item">🟦 Workplane</span>
-          <span class="axis-item">🔴 X (Kanan/Kiri)</span>
-          <span class="axis-item">🟢 Y (Atas/Bawah)</span>
+          <span class="axis-item">🔴 X (Geser/Putar)</span>
+          <span class="axis-item">🟢 Y (Tinggi)</span>
         </div>
       </div>
-
-      <!-- Panel Informasi Evaluasi -->
-      <div id="previewPanel">
-        <div class="card">
-          <h3>📊 Hasil Analisis Sambungan</h3>
-          <div class="stat-row">
-            <span>Kategori Fungsi:</span>
-            <strong id="resFungsi">-</strong>
-          </div>
-          <div class="stat-row">
-            <span>Teknik Digunakan:</span>
-            <strong id="resTeknik">-</strong>
-          </div>
-          <div class="stat-row">
-            <span>Arah Keratan:</span>
-            <span id="resArah" class="badge badge-info">-</span>
-          </div>
-          <div class="stat-row">
-            <span>Tingkat Kuncian (Keratan):</span>
-            <strong id="resTumpukan">-</strong>
-          </div>
-          <div class="stat-row">
-            <span>Pasak Tambahan:</span>
-            <strong id="resPasak">-</strong>
-          </div>
-          <hr>
-          <div class="stat-row" style="font-size: 1.1rem;">
-            <span>Estimasi Kekuatan:</span>
-            <span id="resKekuatan" class="badge">-</span>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>💻 Data Parametrik Logika (JSON)</h3>
-          <pre id="codeOutput">// Susun blok di sebelah kiri untuk menggenerate model 3D</pre>
-        </div>
-      </div>
-
     </div>
   </div>
 
   <!-- XML Toolbox Definition -->
   <xml id="toolbox" style="display: none">
-    <category name="1. Kategori Fungsi (Basis)" colour="#2e7d32">
-      <block type="fungsi_sambungan"></block>
+    <category name="1. Tambah Kayu / Benda Kerja" colour="#2e7d32">
+      <block type="tambah_benda_kerja"></block>
     </category>
-    <category name="2. Teknik Sambungan" colour="#0288d1">
+    <category name="2. Sambungan & Pahatan" colour="#0288d1">
+      <block type="fungsi_sambungan"></block>
       <block type="teknik_sambungan"></block>
     </category>
-    <category name="3. Modifikasi & Kreativitas" colour="#f57c00">
-      <block type="modifikasi_keratan"></block>
-      <block type="opsi_pasak"></block>
+    <category name="3. Transformasi (Geser & Putar)" colour="#f57c00">
+      <block type="transformasi_posisi"></block>
+      <block type="transformasi_rotasi"></block>
     </category>
   </xml>
 
-  <!-- Skrip Aplikasi (Urutan Pemanggilan Penting) -->
+  <!-- Skrip Aplikasi -->
   <script src="blockly-config.js"></script>
   <script src="app.js"></script>
 </body>
