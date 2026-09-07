@@ -1,79 +1,89 @@
 /**
- * Definisi Blok Custom Saka Nusantara
+ * Definisi Blok Custom Saka Nusantara (Benda Kerja, Sambungan, & Transformasi)
  */
 
-// 1. Level 1: Kategori Fungsi (Basis Utama)
+// 1. Kategori Benda Kerja
+Blockly.Blocks['tambah_benda_kerja'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("🪵 TAMBAH BENDA:")
+        .appendField(new Blockly.FieldDropdown([
+          ["Soko Guru (Tiang Utama)", "SOKO"],
+          ["Blandar (Balok Horizontal)", "BLANDAR"],
+          ["Ander / Pengunci", "ANDER"],
+          ["Umpak (Alas Batu)", "UMPAK"]
+        ]), "JENIS_BENDA");
+    this.appendStatementInput("SUB_OPERASI")
+        .appendField("Atur Komponen:");
+    this.setNextStatement(true);
+    this.setPreviousStatement(true);
+    this.setColour(140);
+    this.setTooltip("Tambahkan elemen konstruksi kayu rumah adat.");
+  }
+};
+
+// 2. Kategori Sambungan
 Blockly.Blocks['fungsi_sambungan'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("🔨 SAMBUNGAN SAKA:")
+        .appendField("🔨 Buat Sambungan:")
         .appendField(new Blockly.FieldDropdown([
-          ["Memperpanjang (Lurus)", "LURUS"],
-          ["Sudut / Siku (Bentuk L / T)", "SUDUT"],
-          ["Persilangan (Bentuk +)", "SILANG"]
-        ]), "FUNGSI");
-    this.appendStatementInput("TEKNIK")
-        .setCheck("Teknik")
-        .appendField("Gunakan Teknik:");
-    this.setColour(140);
-    this.setTooltip("Pilih tujuan/fungsi dari sambungan kayu saka yang ingin dibuat.");
+          ["Purus & Lubang (Mortise-Tenon)", "MORTISE"],
+          ["Ekor Burung (Dovetail)", "DOVETAIL"],
+          ["Takik Lurus (Lap Joint)", "LAP"]
+        ]), "TIPE_SAMBUNGAN");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(200);
   }
 };
 
-// 2. Level 2: Teknik Sambungan Tradisional
 Blockly.Blocks['teknik_sambungan'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("Teknik:")
+        .appendField("Kunci dengan Pasak?")
         .appendField(new Blockly.FieldDropdown([
-          ["Takik Lurus (Lap Joint)", "LAP_JOINT"],
-          ["Purus & Lubang (Mortise & Tenon)", "MORTISE_TENON"],
-          ["Ekor Burung (Dovetail)", "DOVETAIL"]
-        ]), "TEKNIK_NAME");
-    this.appendStatementInput("MODIFIKASI")
-        .setCheck("Modifikasi")
-        .appendField("Atur Modifikasi:");
-    this.setPreviousStatement(true, "Teknik");
-    this.setNextStatement(false);
-    this.setColour(200);
-    this.setTooltip("Pilih jenis teknik pahatan/keratan dasar.");
-  }
-};
-
-// 3. Level 3: Modifikasi Keratan
-Blockly.Blocks['modifikasi_keratan'] = {
-  init: function() {
-    this.appendDummyInput()
-        .appendField("Arah Keratan:")
-        .appendField(new Blockly.FieldDropdown([
-          ["Horizontal", "HORIZONTAL"],
-          ["Vertikal", "VERTIKAL"]
-        ]), "ARAH")
-        .appendField(" | Jumlah Keratan:")
-        .appendField(new Blockly.FieldDropdown([
-          ["1 Keratan (Lapis 1)", "1"],
-          ["2 Keratan (Lapis 2)", "2"],
-          ["3 Keratan (Lapis 3)", "3"]
-        ]), "TUMPUKAN");
-    this.setPreviousStatement(true, "Modifikasi");
-    this.setNextStatement(true, "Modifikasi");
-    this.setColour(35);
-    this.setTooltip("Tentukan arah dan jumlah bertumpuknya keratan kayu.");
-  }
-};
-
-// 4. Level 3 (Opsional): Pasak Pengunci Tradisional
-Blockly.Blocks['opsi_pasak'] = {
-  init: function() {
-    this.appendDummyInput()
-        .appendField("Tambahkan Pasak Kayu:")
-        .appendField(new Blockly.FieldDropdown([
-          ["Ya (Kunci Ekstra)", "YA"],
+          ["Ya (Kunci Pasak)", "YA"],
           ["Tidak", "TIDAK"]
-        ]), "PAKAI_PASAK");
-    this.setPreviousStatement(true, "Modifikasi");
-    this.setNextStatement(true, "Modifikasi");
-    this.setColour(45);
-    this.setTooltip("Tambahkan pasak melintang untuk mengunci sambungan.");
+        ]), "PASAK");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(200);
+  }
+};
+
+// 3. Kategori Transformasi (Geser & Putar)
+Blockly.Blocks['transformasi_posisi'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("📍 Geser Posisi ->")
+        .appendField("X:")
+        .appendField(new Blockly.FieldNumber(0, -10, 10), "POS_X")
+        .appendField("Y:")
+        .appendField(new Blockly.FieldNumber(0, 0, 10), "POS_Y")
+        .appendField("Z:")
+        .appendField(new Blockly.FieldNumber(0, -10, 10), "POS_Z");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(35);
+    this.setTooltip("Geser posisi objek kayu di ruang 3D.");
+  }
+};
+
+Blockly.Blocks['transformasi_rotasi'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("🔄 Putar Objek ->")
+        .appendField("Sumbu Y:")
+        .appendField(new Blockly.FieldDropdown([
+          ["0°", "0"],
+          ["90°", "90"],
+          ["180°", "180"],
+          ["270°", "270"]
+        ]), "ROT_Y");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(35);
+    this.setTooltip("Putar sudut orientasi kayu.");
   }
 };
