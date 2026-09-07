@@ -1,15 +1,17 @@
-// Variable Global 3D & Simulasi
+// Variable Global 3D & Simulasi Fisika
 let scene, camera, renderer, controls;
 let worldGroup, gridHelper;
 let workspace;
 let isQuaking = false;
 let quakeTime = 0;
 
-// Material Kayu & Batu Tradisional
-const matSoko    = new THREE.MeshLambertMaterial({ color: 0x8B5A2B }); // Cokelat Tua
-const matBlandar = new THREE.MeshLambertMaterial({ color: 0xCD853F }); // Cokelat Muda
-const matAnder   = new THREE.MeshLambertMaterial({ color: 0xD2691E }); // Cokelat Terang
-const matUmpak   = new THREE.MeshLambertMaterial({ color: 0x7f8c8d }); // Abu-abu Batu
+// Menyimpan data fisik objek kayu
+let activeWoodComponents = [];
+
+const matSoko    = new THREE.MeshLambertMaterial({ color: 0x8B5A2B });
+const matBlandar = new THREE.MeshLambertMaterial({ color: 0xCD853F });
+const matAnder   = new THREE.MeshLambertMaterial({ color: 0xD2691E });
+const matUmpak   = new THREE.MeshLambertMaterial({ color: 0x7f8c8d });
 
 window.addEventListener('load', () => {
   setTimeout(() => {
@@ -60,11 +62,9 @@ function initThreeJS() {
   dirLight.castShadow = true;
   scene.add(dirLight);
 
-  // Grup Induk Komponen Struktur
   worldGroup = new THREE.Group();
   scene.add(worldGroup);
 
-  // Workplane Tinkercad
   gridHelper = new THREE.GridHelper(16, 32, 0x007acc, 0xa0c4df);
   gridHelper.position.y = 0;
   scene.add(gridHelper);
@@ -72,24 +72,42 @@ function initThreeJS() {
   const axesHelper = new THREE.AxesHelper(4);
   scene.add(axesHelper);
 
-  // Loop Render & Efek Simulasi Gempa
+  // Loop Render & Engine Fisika Uji Gempa
   function animate() {
     requestAnimationFrame(animate);
 
     if (isQuaking) {
-      quakeTime += 0.2;
-      // Getaran Tanah Gempa
-      const shakeX = Math.sin(quakeTime * 3) * 0.15;
-      const shakeZ = Math.cos(quakeTime * 2.5) * 0.15;
+      quakeTime += 0.15;
+      const shakeX = Math.sin(quakeTime * 4) * 0.2;
+      const shakeZ = Math.cos(quakeTime * 3) * 0.2;
       gridHelper.position.x = shakeX;
       gridHelper.position.z = shakeZ;
-      worldGroup.position.x = shakeX * 0.8;
-      worldGroup.position.z = shakeZ * 0.8;
-      worldGroup.rotation.z = Math.sin(quakeTime * 2) * 0.02;
+
+      // Evaluasi Perilaku Fisika Tiap Kayu
+      activeWoodComponents.forEach((item) => {
+        const mesh = item.mesh;
+
+        if (item.jointStatus === 'NO_JOINT') {
+          // KASUS 1: Roboh & Ambruk ke Tanah (Tanpa Sambungan)
+          if (mesh.position.y > 0.3) {
+            mesh.position.y -= 0.15; // Jatuh gravitasi
+            mesh.rotation.x += 0.08; // Terguling
+            mesh.rotation.z += 0.08;
+            mesh.position.x += (Math.random() - 0.5) * 0.1;
+          } else {
+            mesh.position.y = 0.3; // Tergeletak di tanah
+          }
+        } else if (item.jointStatus === 'LOOSE') {
+          // KASUS 2: Mleyot Permanen (Lubang Longgar/Renggang)
+          mesh.rotation.z = Math.sin(quakeTime) * 0.15 + 0.25; // Mleyot miring
+          mesh.rotation.x = 0.1;
+        } else if (item.jointStatus === 'PRECISE') {
+          // KASUS 3: Meredam Gempa Secara Fleksibel & Tetap Kokoh
+          mesh.rotation.z = Math.sin(quakeTime * 2) * 0.03;
+        }
+      });
     } else {
       gridHelper.position.set(0, 0, 0);
-      worldGroup.position.set(0, 0, 0);
-      worldGroup.rotation.z = 0;
     }
 
     controls.update();
@@ -128,7 +146,7 @@ function zoomOutCamera() {
   }
 }
 
-// Simulasi Uji Gempa
+// Handler Simulasi Uji Gempa
 function toggleEarthquake() {
   isQuaking = !isQuaking;
   const btn = document.getElementById('btnQuake');
@@ -137,27 +155,26 @@ function toggleEarthquake() {
   if (isQuaking) {
     btn.classList.add('active');
     btn.innerText = '⏹️ Hentikan Gempa';
-    status.innerText = '🫨 Simulasi Gempa Berlangsung...';
+    status.innerText = '🫨 Gempa Berlangsung! Memeriksa Ketahanan...';
     status.style.color = '#e65100';
   } else {
     btn.classList.remove('active');
     btn.innerText = '🫨 Uji Gempa';
-    status.innerText = 'Status Bangunan: Tahan Gempa (Tersambung Presisi)';
-    status.style.color = '#2e7d32';
+    updateSimulation(); // Reset posisi kayu setelah gempa
   }
 }
 
-// Re-build Konstruksi 3D Berdasarkan Blok Siswa
+// Generasi Bangunan 3D Berdasarkan Logika Blok
 function updateSimulation() {
   if (!workspace || !worldGroup) return;
 
-  // Bersihkan Komponen Lama
   while (worldGroup.children.length > 0) {
     const obj = worldGroup.children[0];
     if (obj.geometry) obj.geometry.dispose();
     worldGroup.remove(obj);
   }
 
+  activeWoodComponents = [];
   const topBlocks = workspace.getTopBlocks(true);
 
   topBlocks.forEach((block) => {
@@ -165,51 +182,80 @@ function updateSimulation() {
       buildWoodComponent(block);
     }
   });
+
+  // Update Teks Status
+  evalOverallStatus();
 }
 
 function buildWoodComponent(block) {
   const jenis = block.getFieldValue('JENIS_BENDA');
-  let mesh;
+  const p = parseFloat(block.getFieldValue('DIM_P'));
+  const l = parseFloat(block.getFieldValue('DIM_L'));
+  const t = parseFloat(block.getFieldValue('DIM_T'));
 
-  // Render Bentuk Geometri Berdasarkan Jenis Komponen
-  if (jenis === 'SOKO') {
-    // Soko Guru (Tiang Vertikal)
-    const geo = new THREE.BoxGeometry(0.8, 4, 0.8);
-    mesh = new THREE.Mesh(geo, matSoko);
-    mesh.position.y = 2; // Berdiri di atas workplane
-  } else if (jenis === 'BLANDAR') {
-    // Blandar (Balok Mendatar)
-    const geo = new THREE.BoxGeometry(6, 0.6, 0.6);
-    mesh = new THREE.Mesh(geo, matBlandar);
-    mesh.position.y = 4.3;
-  } else if (jenis === 'ANDER') {
-    // Ander / Pengunci
-    const geo = new THREE.BoxGeometry(0.5, 1.5, 0.5);
-    mesh = new THREE.Mesh(geo, matAnder);
-    mesh.position.y = 5.2;
-  } else if (jenis === 'UMPAK') {
-    // Umpak (Batu Alas)
-    const geo = new THREE.CylinderGeometry(0.7, 0.9, 0.6, 8);
-    mesh = new THREE.Mesh(geo, matUmpak);
-    mesh.position.y = 0.3;
-  }
+  let mat = matSoko;
+  if (jenis === 'BLANDAR') mat = matBlandar;
+  else if (jenis === 'ANDER') mat = matAnder;
+  else if (jenis === 'UMPAK') mat = matUmpak;
 
-  // Iterasi Blok Transformasi Bersarang di Dalamnya
+  const geo = new THREE.BoxGeometry(p, t, l);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.y = t / 2; // Default berdiri di tanah
+
+  let jointStatus = 'NO_JOINT'; // Default: Tidak ada sambungan
+  let sizeLubang = 0;
+  let sizePasak = 0;
+
+  // Cek Blok Bersarang di Dalamnya
   let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
   while (innerBlock) {
     if (innerBlock.type === 'transformasi_posisi') {
-      const x = parseFloat(innerBlock.getFieldValue('POS_X'));
-      const y = parseFloat(innerBlock.getFieldValue('POS_Y'));
-      const z = parseFloat(innerBlock.getFieldValue('POS_Z'));
-      mesh.position.x += x;
-      mesh.position.y += y;
-      mesh.position.z += z;
+      mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X'));
+      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Y'));
+      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Z'));
     } else if (innerBlock.type === 'transformasi_rotasi') {
       const rotY = parseFloat(innerBlock.getFieldValue('ROT_Y'));
       mesh.rotation.y += (rotY * Math.PI) / 180;
+    } else if (innerBlock.type === 'fungsi_sambungan') {
+      sizeLubang = parseInt(innerBlock.getFieldValue('UKURAN_LUBANG'));
+      sizePasak  = parseInt(innerBlock.getFieldValue('UKURAN_PASAK'));
+
+      // Analisis Presisi Kuncian
+      if (sizePasak === 0) {
+        jointStatus = 'LOOSE'; // Mleyot (Tanpa Pasak)
+      } else if (sizePasak === sizeLubang) {
+        jointStatus = 'PRECISE'; // Presisi & Kokoh
+      } else if (sizePasak < sizeLubang) {
+        jointStatus = 'LOOSE'; // Longgar -> Mleyot
+      } else {
+        jointStatus = 'NO_JOINT'; // Terlalu besar -> Pasak tidak masuk -> Ambruk
+      }
     }
     innerBlock = innerBlock.getNextBlock();
   }
 
   worldGroup.add(mesh);
+  activeWoodComponents.push({ mesh, jointStatus, jenis });
+}
+
+function evalOverallStatus() {
+  const status = document.getElementById('quakeStatus');
+  if (!status) return;
+
+  let hasNoJoint = activeWoodComponents.some(c => c.jointStatus === 'NO_JOINT');
+  let hasLoose   = activeWoodComponents.some(c => c.jointStatus === 'LOOSE');
+
+  if (activeWoodComponents.length === 0) {
+    status.innerText = 'Status Bangunan: Belum Ada Kayu';
+    status.style.color = '#666';
+  } else if (hasNoJoint) {
+    status.innerText = '⚠️ Bahaya: Ada Kayu Tanpa Sambungan (Rentan Ambruk!)';
+    status.style.color = '#d32f2f';
+  } else if (hasLoose) {
+    status.innerText = '⚠️ Peringatan: Sambungan Longgar / Renggang (Bisa Mleyot!)';
+    status.style.color = '#ff9800';
+  } else {
+    status.innerText = '✅ Bangunan Sangat Presisi & Tahan Gempa!';
+    status.style.color = '#2e7d32';
+  }
 }
