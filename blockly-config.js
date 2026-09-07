@@ -1,8 +1,8 @@
 /**
- * Definisi Blok Custom Saka Nusantara (Benda Kerja, Sambungan, & Transformasi)
+ * Definisi Blok Custom Saka Nusantara dengan Parameter Dimensi & Presisi Sambungan
  */
 
-// 1. Kategori Benda Kerja
+// 1. Benda Kerja dengan Dimensi Parametrik
 Blockly.Blocks['tambah_benda_kerja'] = {
   init: function() {
     this.appendDummyInput()
@@ -13,46 +13,53 @@ Blockly.Blocks['tambah_benda_kerja'] = {
           ["Ander / Pengunci", "ANDER"],
           ["Umpak (Alas Batu)", "UMPAK"]
         ]), "JENIS_BENDA");
+    this.appendDummyInput()
+        .appendField("📐 Dimensi (P x L x T):")
+        .appendField(new Blockly.FieldNumber(1, 0.2, 10), "DIM_P")
+        .appendField("x")
+        .appendField(new Blockly.FieldNumber(1, 0.2, 10), "DIM_L")
+        .appendField("x")
+        .appendField(new Blockly.FieldNumber(4, 0.2, 10), "DIM_T");
     this.appendStatementInput("SUB_OPERASI")
-        .appendField("Atur Komponen:");
+        .appendField("Atur Komponen & Sambungan:");
     this.setNextStatement(true);
     this.setPreviousStatement(true);
     this.setColour(140);
-    this.setTooltip("Tambahkan elemen konstruksi kayu rumah adat.");
   }
 };
 
-// 2. Kategori Sambungan
+// 2. Sambungan dengan Parameter Presisi Lubang & Pasak
 Blockly.Blocks['fungsi_sambungan'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("🔨 Buat Sambungan:")
+        .appendField("🔨 Sambungan:")
         .appendField(new Blockly.FieldDropdown([
           ["Purus & Lubang (Mortise-Tenon)", "MORTISE"],
           ["Ekor Burung (Dovetail)", "DOVETAIL"],
           ["Takik Lurus (Lap Joint)", "LAP"]
         ]), "TIPE_SAMBUNGAN");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.setColour(200);
-  }
-};
-
-Blockly.Blocks['teknik_sambungan'] = {
-  init: function() {
     this.appendDummyInput()
-        .appendField("Kunci dengan Pasak?")
+        .appendField("📏 Ukuran Coakan/Lubang:")
         .appendField(new Blockly.FieldDropdown([
-          ["Ya (Kunci Pasak)", "YA"],
-          ["Tidak", "TIDAK"]
-        ]), "PASAK");
+          ["Kecil (2 cm)", "2"],
+          ["Sedang (4 cm)", "4"],
+          ["Besar (6 cm)", "6"]
+        ]), "UKURAN_LUBANG");
+    this.appendDummyInput()
+        .appendField("📌 Ukuran Pasak:")
+        .appendField(new Blockly.FieldDropdown([
+          ["Tanpa Pasak", "0"],
+          ["Kecil (2 cm)", "2"],
+          ["Sedang (4 cm)", "4"],
+          ["Besar (6 cm)", "6"]
+        ]), "UKURAN_PASAK");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(200);
   }
 };
 
-// 3. Kategori Transformasi (Geser & Putar)
+// 3. Transformasi Posisi & Rotasi
 Blockly.Blocks['transformasi_posisi'] = {
   init: function() {
     this.appendDummyInput()
@@ -66,7 +73,6 @@ Blockly.Blocks['transformasi_posisi'] = {
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(35);
-    this.setTooltip("Geser posisi objek kayu di ruang 3D.");
   }
 };
 
@@ -84,6 +90,5 @@ Blockly.Blocks['transformasi_rotasi'] = {
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(35);
-    this.setTooltip("Putar sudut orientasi kayu.");
   }
 };
