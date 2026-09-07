@@ -1,16 +1,16 @@
 /**
- * Definisi Blok Custom Saka Nusantara dengan Parameter Dimensi & Presisi Sambungan
+ * Definisi Blok Custom Saka Nusantara
  */
 
-// 1. Benda Kerja dengan Dimensi Parametrik
+// 1. Benda Kerja
 Blockly.Blocks['tambah_benda_kerja'] = {
   init: function() {
     this.appendDummyInput()
         .appendField("🪵 TAMBAH BENDA:")
         .appendField(new Blockly.FieldDropdown([
-          ["Soko Guru (Tiang Utama)", "SOKO"],
-          ["Blandar (Balok Horizontal)", "BLANDAR"],
-          ["Ander / Pengunci", "ANDER"],
+          ["Soko Guru (Tiang)", "SOKO"],
+          ["Blandar (Balok)", "BLANDAR"],
+          ["Ander (Pengunci)", "ANDER"],
           ["Umpak (Alas Batu)", "UMPAK"]
         ]), "JENIS_BENDA");
     this.appendDummyInput()
@@ -21,14 +21,14 @@ Blockly.Blocks['tambah_benda_kerja'] = {
         .appendField("x")
         .appendField(new Blockly.FieldNumber(4, 0.2, 10), "DIM_T");
     this.appendStatementInput("SUB_OPERASI")
-        .appendField("Atur Komponen & Sambungan:");
+        .appendField("Operasi / Modifikasi:");
     this.setNextStatement(true);
     this.setPreviousStatement(true);
     this.setColour(140);
   }
 };
 
-// 2. Sambungan dengan Parameter Presisi Lubang & Pasak
+// 2. Sambungan & Coakan
 Blockly.Blocks['fungsi_sambungan'] = {
   init: function() {
     this.appendDummyInput()
@@ -39,14 +39,13 @@ Blockly.Blocks['fungsi_sambungan'] = {
           ["Takik Lurus (Lap Joint)", "LAP"]
         ]), "TIPE_SAMBUNGAN");
     this.appendDummyInput()
-        .appendField("📏 Ukuran Coakan/Lubang:")
+        .appendField("📏 Coakan:")
         .appendField(new Blockly.FieldDropdown([
           ["Kecil (2 cm)", "2"],
           ["Sedang (4 cm)", "4"],
           ["Besar (6 cm)", "6"]
-        ]), "UKURAN_LUBANG");
-    this.appendDummyInput()
-        .appendField("📌 Ukuran Pasak:")
+        ]), "UKURAN_LUBANG")
+        .appendField(" | Pasak:")
         .appendField(new Blockly.FieldDropdown([
           ["Tanpa Pasak", "0"],
           ["Kecil (2 cm)", "2"],
@@ -59,7 +58,7 @@ Blockly.Blocks['fungsi_sambungan'] = {
   }
 };
 
-// 3. Transformasi Posisi & Rotasi
+// 3. Transformasi Posisi
 Blockly.Blocks['transformasi_posisi'] = {
   init: function() {
     this.appendDummyInput()
@@ -76,6 +75,7 @@ Blockly.Blocks['transformasi_posisi'] = {
   }
 };
 
+// 4. Transformasi Rotasi
 Blockly.Blocks['transformasi_rotasi'] = {
   init: function() {
     this.appendDummyInput()
@@ -87,6 +87,29 @@ Blockly.Blocks['transformasi_rotasi'] = {
           ["180°", "180"],
           ["270°", "270"]
         ]), "ROT_Y");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(35);
+  }
+};
+
+// 5. Transformasi Tampilan (Warna & Transparansi)
+Blockly.Blocks['transformasi_tampilan'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("🎨 Tampilan -> Warna:")
+        .appendField(new Blockly.FieldDropdown([
+          ["Cokelat Jati", "0x8B5A2B"],
+          ["Cokelat Pinus", "0xCD853F"],
+          ["Merah Kayu", "0xA0522D"],
+          ["Abu-abu Batu", "0x7F8C8D"]
+        ]), "WARNA")
+        .appendField(" | Transparan:")
+        .appendField(new Blockly.FieldDropdown([
+          ["Padat (100%)", "1.0"],
+          ["Semi Transparan (50%)", "0.5"],
+          ["Sangat Transparan (20%)", "0.2"]
+        ]), "OPASITAS");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(35);
