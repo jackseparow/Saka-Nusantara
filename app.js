@@ -16,6 +16,7 @@ window.addEventListener('load', () => {
   }, 100);
 });
 
+// 1. Resizable Splitter Drag Handler
 function initSplitter() {
   const splitter = document.getElementById('dragSplitter');
   const leftPanel = document.getElementById('blocklyDiv');
@@ -48,14 +49,14 @@ function initSplitter() {
   });
 }
 
+// 2. Inisialisasi Workspace Blockly
 function initBlockly() {
   const blocklyArea = document.getElementById('blocklyDiv');
-  const toolboxXml = document.getElementById('toolbox');
 
-  if (typeof Blockly === 'undefined' || !blocklyArea || !toolboxXml) return;
+  if (typeof Blockly === 'undefined' || !blocklyArea) return;
 
   workspace = Blockly.inject('blocklyDiv', {
-    toolbox: toolboxXml,
+    toolbox: window.SAKA_TOOLBOX_XML,
     scrollbars: true,
     zoom: { controls: true, wheel: true }
   });
@@ -63,6 +64,7 @@ function initBlockly() {
   workspace.addChangeListener(updateSimulation);
 }
 
+// 3. Inisialisasi Three.js Engine
 function initThreeJS() {
   const container = document.getElementById('canvas3DContainer');
   if (!container) return;
@@ -114,7 +116,7 @@ function initThreeJS() {
         const mesh = item.mesh;
 
         if (item.jointStatus === 'NO_JOINT') {
-          // KASUS 1: Roboh & Ambruk ke Tanah
+          // KASUS 1: Ambruk & Tergeletak
           if (mesh.position.y > 0.3) {
             mesh.position.y -= 0.15;
             mesh.rotation.x += 0.08;
@@ -124,8 +126,8 @@ function initThreeJS() {
             mesh.position.y = 0.3;
           }
         } else if (item.jointStatus === 'LOOSE') {
-          // KASUS 2: Mleyot (Miring jika tidak ada penguat diagonal/pasak presisi)
-          const mleyotFactor = item.hasDiagonalBrace ? 0.02 : 0.2; // Penguat diagonal mengurangi mleyot!
+          // KASUS 2: Mleyot Permanen
+          const mleyotFactor = item.hasDiagonalBrace ? 0.02 : 0.2;
           mesh.rotation.z = Math.sin(quakeTime) * mleyotFactor + (item.hasDiagonalBrace ? 0 : 0.25);
           mesh.rotation.x = 0.05;
         } else if (item.jointStatus === 'PRECISE') {
@@ -178,6 +180,7 @@ function zoomOutCamera() {
   }
 }
 
+// 4. Handler Simulasi Uji Gempa
 function toggleEarthquake() {
   isQuaking = !isQuaking;
   const btn = document.getElementById('btnQuake');
@@ -213,6 +216,7 @@ function toggleEarthquake() {
   }
 }
 
+// 5. Re-build Bangunan 3D Berdasarkan Blok Siswa
 function updateSimulation() {
   if (!workspace || !worldGroup) return;
 
@@ -257,7 +261,6 @@ function buildWoodComponent(block) {
   let jointStatus = 'NO_JOINT';
   let hasDiagonalBrace = (jenis === 'DIAGONAL');
 
-  // Iterasi Blok Operasi Bersarang
   let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
   while (innerBlock) {
     if (innerBlock.type === 'rakit_sambungan') {
@@ -269,7 +272,6 @@ function buildWoodComponent(block) {
       else if (axis === 'Z') mesh.rotation.z += rad;
       else if (axis === 'X') mesh.rotation.x += rad;
 
-      // Rotasi 45 Derajat menandakan penguat diagonal
       if (Math.abs(angle % 180) === 45) {
         hasDiagonalBrace = true;
       }
