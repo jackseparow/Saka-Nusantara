@@ -5,9 +5,7 @@ let workspace;
 let isQuaking = false;
 let quakeTime = 0;
 
-// Registry Objek Kayu
-let woodRegistry = {}; // Menyimpan mesh berdasarkan ID
-let assembledGroups = []; // Menyimpan kesatuan kelompok rakitan
+let assembledGroups = []; // Registry kesatuan struktur rakitan
 
 window.addEventListener('load', () => {
   setTimeout(() => {
@@ -94,17 +92,16 @@ function initThreeJS() {
   worldGroup = new THREE.Group();
   scene.add(worldGroup);
 
-  // 1. Grid Strimin Workplane Khas Tinkercad
+  // Strimin Workplane
   gridStrimin = new THREE.GridHelper(20, 40, 0x0055ff, 0xa0c4df);
   gridStrimin.position.y = 0;
   scene.add(gridStrimin);
 
-  // 2. Panah Sumbu Koordinat (X=Merah, Y=Hijau, Z=Biru/Vertikal)
   const axesHelper = new THREE.AxesHelper(5);
   axesHelper.position.set(0, 0.01, 0);
   scene.add(axesHelper);
 
-  // Loop Render & Engine Fisika Uji Gempa
+  // Loop Render & Simulasi Gempa
   function animate() {
     requestAnimationFrame(animate);
 
@@ -116,16 +113,15 @@ function initThreeJS() {
       gridStrimin.position.x = shakeX;
       gridStrimin.position.z = shakeY;
 
-      // Efek Gempa pada Seluruh Kesatuan Struktur
       assembledGroups.forEach((groupData) => {
         const grp = groupData.groupObject;
 
         if (groupData.isLocked) {
-          // Kesatuan Terikat Sempurna: Meredam Getaran Bersama
+          // Kesatuan Terikat Sempurna: Berayun Bersama Meredam Gempa
           grp.rotation.z = Math.sin(quakeTime * 2) * 0.02;
           grp.rotation.x = Math.cos(quakeTime * 2) * 0.02;
         } else {
-          // Kuncian Longgar/Tanpa Sambungan: Ambruk / Terpisah
+          // Kuncian Renggang / Asal Nempel: Terpisah dan Ambruk ke Tanah
           grp.children.forEach((child) => {
             if (child.position.y > 0.3) {
               child.position.y -= 0.12;
@@ -182,10 +178,10 @@ function toggleEarthquake() {
     btn.classList.add('active');
     btn.innerText = '⏹️ Hentikan Gempa';
     
-    let allLocked = assembledGroups.every(g => g.isLocked);
+    let allLocked = assembledGroups.length > 0 && assembledGroups.every(g => g.isLocked);
 
-    if (Object.keys(woodRegistry).length === 0) {
-      status.innerText = 'Status: Belum ada kayu di tanah!';
+    if (assembledGroups.length === 0) {
+      status.innerText = 'Status: Belum ada rakitan kayu di tanah!';
       status.style.color = '#666';
     } else if (!allLocked) {
       status.innerText = '💥 STRUKTUR AMBRUK! (Ada sambungan yang tidak terkunci presisi)';
@@ -207,70 +203,93 @@ function toggleEarthquake() {
 function updateSimulation() {
   if (!workspace || !worldGroup) return;
 
-  // Clear Scene
   while (worldGroup.children.length > 0) {
     const obj = worldGroup.children[0];
     if (obj.geometry) obj.geometry.dispose();
     worldGroup.remove(obj);
   }
 
-  woodRegistry = {};
   assembledGroups = [];
-
   const topBlocks = workspace.getTopBlocks(true);
 
-  // Tahap 1: Buat Benda Kerja di Tanah
-  topBlocks.forEach((block) => {
-    if (block.type === 'tambah_benda_kerja') {
-      createWoodOnGround(block);
-    }
-  });
-
-  // Tahap 2: Proses Perakitan Berjenjang
   topBlocks.forEach((block) => {
     if (block.type === 'rakit_dua_benda') {
-      processAssemblyBlock(block);
+      processRakitBlock(block);
+    } else if (block.type === 'tambah_benda_kerja') {
+      // Jika ada benda berdiri sendiri tanpa blok rakit
+      const standaloneGroup = new THREE.Group();
+      const res = buildSingleMesh(block);
+      if (res.mesh) {
+        standaloneGroup.add(res.mesh);
+        worldGroup.add(standaloneGroup);
+        assembledGroups.push({ groupObject: standaloneGroup, isLocked: res.isPresise });
+      }
     }
   });
 }
 
-function createWoodOnGround(block) {
+function processRakitBlock(rakitBlock) {
+  const combinedGroup = new THREE.Group();
+  let isAllPrecise = true;
+
+  // Process Benda 1
+  const b1Block = rakitBlock.getInputTargetBlock('BENDA_1');
+  if (b1Block && b1Block.type === 'tambah_benda_kerja') {
+    const res1 = buildSingleMesh(b1Block);
+    if (res1.mesh) {
+      combinedGroup.add(res1.mesh);
+      if (!res1.isPresise) isAllPrecise = false;
+    }
+  }
+
+  // Process Benda 2
+  const b2Block = rakitBlock.getInputTargetBlock('BENDA_2');
+  if (b2Block && b2Block.type === 'tambah_benda_kerja') {
+    const res2 = buildSingleMesh(b2Block);
+    if (res2.mesh) {
+      combinedGroup.add(res2.mesh);
+      if (!res2.isPresise) isAllPrecise = false;
+    }
+  }
+
+  worldGroup.add(combinedGroup);
+  assembledGroups.push({
+    groupObject: combinedGroup,
+    isLocked: isAllPrecise
+  });
+}
+
+function buildSingleMesh(block) {
   const jenis = block.getFieldValue('JENIS_BENDA');
-  const id    = block.getFieldValue('ID_BENDA') || 'kayu_' + Math.random().toString(36).substr(2, 4);
   const p     = Math.max(0.2, parseFloat(block.getFieldValue('DIM_P')) || 1);
   const l     = Math.max(0.2, parseFloat(block.getFieldValue('DIM_L')) || 1);
   const t     = Math.max(0.2, parseFloat(block.getFieldValue('DIM_T')) || 4);
 
-  let colorVal = 0x8B5A2B; // Soko (Cokelat Jati)
+  let colorVal = 0x8B5A2B;
   if (jenis === 'BLANDAR') colorVal = 0xCD853F;
   else if (jenis === 'DIAGONAL') colorVal = 0xA0522D;
+  else if (jenis === 'PASAK') colorVal = 0xD2691E;
   else if (jenis === 'UMPAK') colorVal = 0x7F8C8D;
 
   const mat = new THREE.MeshLambertMaterial({ color: colorVal });
   const geo = new THREE.BoxGeometry(p, t, l);
   const mesh = new THREE.Mesh(geo, mat);
   
-  // Posisi Awal di Tanah/Workplane (Sumbu Z Vertikal Three.js)
+  // Posisi Dasar di Atas Tanah (Workplane)
   mesh.position.set(0, t / 2, 0);
 
-  let jointData = { hasJoint: false, isPresise: false };
+  let isPresise = false;
 
-  // Iterasi Transformasi (Translasi & Rotasi Pivot)
   let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
   while (innerBlock) {
     if (innerBlock.type === 'transformasi_translasi') {
       mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X')) || 0;
-      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; // Y di UI = Z di 3D
-      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; // Z di UI = Y (Tinggi)
+      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; // Sumbu Mendatar
+      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; // Sumbu Tinggi
     } else if (innerBlock.type === 'transformasi_rotasi_pivot') {
       const angle = parseFloat(innerBlock.getFieldValue('SUDUT')) || 0;
       const axis  = innerBlock.getFieldValue('SUMBU');
-      const pivot = innerBlock.getFieldValue('PIVOT');
       const rad   = (angle * Math.PI) / 180;
-
-      // Geser Pivot
-      if (pivot === 'START') mesh.geometry.translate(0, t / 2, 0);
-      else if (pivot === 'END') mesh.geometry.translate(0, -t / 2, 0);
 
       if (axis === 'Z') mesh.rotation.y += rad;
       else if (axis === 'X') mesh.rotation.x += rad;
@@ -278,53 +297,10 @@ function createWoodOnGround(block) {
     } else if (innerBlock.type === 'fungsi_sambungan') {
       const sizeLubang = parseInt(innerBlock.getFieldValue('UKURAN_LUBANG'));
       const sizePasak  = parseInt(innerBlock.getFieldValue('UKURAN_PASAK'));
-      jointData.hasJoint = true;
-      jointData.isPresise = (sizePasak === sizeLubang && sizePasak > 0);
+      isPresise = (sizePasak === sizeLubang && sizePasak > 0);
     }
     innerBlock = innerBlock.getNextBlock();
   }
 
-  // Buat Grup Induk untuk Objek Ini
-  const singleGroup = new THREE.Group();
-  singleGroup.add(mesh);
-  worldGroup.add(singleGroup);
-
-  // Daftarkan di Registry
-  woodRegistry[id] = {
-    group: singleGroup,
-    mesh: mesh,
-    jointData: jointData
-  };
-
-  assembledGroups.push({
-    groupObject: singleGroup,
-    isLocked: jointData.isPresise
-  });
-}
-
-function processAssemblyBlock(block) {
-  const idInduk = block.getFieldValue('ID_INDUK');
-  const idAnak  = block.getFieldValue('ID_ANAK');
-
-  const objInduk = woodRegistry[idInduk];
-  const objAnak  = woodRegistry[idAnak];
-
-  if (objInduk && objAnak) {
-    // Gabungkan Objek Anak ke dalam Grup Induk (Parent-Child Grouping)
-    objInduk.group.add(objAnak.mesh);
-
-    // Kunci Status Gabungan
-    const isBothPrecise = objInduk.jointData.isPresise && objAnak.jointData.isPresise;
-    
-    // Update Registry Assembled Groups
-    const indexAnakGroup = assembledGroups.findIndex(g => g.groupObject === objAnak.group);
-    if (indexAnakGroup !== -1) {
-      assembledGroups.splice(indexAnakGroup, 1); // Hapus grup terpisah milik anak
-    }
-
-    const parentGroupData = assembledGroups.find(g => g.groupObject === objInduk.group);
-    if (parentGroupData) {
-      parentGroupData.isLocked = isBothPrecise;
-    }
-  }
+  return { mesh, isPresise };
 }
