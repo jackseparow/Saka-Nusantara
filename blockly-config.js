@@ -1,8 +1,8 @@
 /**
- * Definisi Blok Custom Saka Nusantara - Murni Nested Statement Input
+ * Definisi Blok Custom Saka Nusantara
  */
 
-// 1. Blok Benda Kerja Dasar
+// 1. Benda Kerja Dasar
 Blockly.Blocks['tambah_benda_kerja'] = {
   init: function() {
     this.appendDummyInput()
@@ -29,7 +29,7 @@ Blockly.Blocks['tambah_benda_kerja'] = {
   }
 };
 
-// 2. Transformasi: Translasi (Geser Posisi di Ruang 3D)
+// 2. Transformasi: Translasi (Geser Posisi)
 Blockly.Blocks['transformasi_translasi'] = {
   init: function() {
     this.appendDummyInput()
@@ -46,21 +46,30 @@ Blockly.Blocks['transformasi_translasi'] = {
   }
 };
 
-// 3. Transformasi: Rotasi Kustom
+// 3. Transformasi: Rotasi Kustom dengan Koordinat Pusat Rotasi (Pivot X, Y, Z)
 Blockly.Blocks['transformasi_rotasi_pivot'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("🔄 Rotasi -> Sudut:")
+        .appendField("🔄 Rotasi Sudut:")
         .appendField(new Blockly.FieldNumber(90, -360, 360), "SUDUT")
         .appendField("° pada Sumbu:")
         .appendField(new Blockly.FieldDropdown([
-          ["Sumbu Z (Vertikal)", "Z"],
-          ["Sumbu X (Mendatar)", "X"],
-          ["Sumbu Y (Miring)", "Y"]
+          ["Sumbu Z (Vertikal / Tinggi)", "Z"],
+          ["Sumbu X (Lebar / Kanan-Kiri)", "X"],
+          ["Sumbu Y (Panjang / Depan-Belakang)", "Y"]
         ]), "SUMBU");
+    this.appendDummyInput()
+        .appendField("🎯 Koordinat Pusat Rotasi (Pivot Point):")
+        .appendField("X:")
+        .appendField(new Blockly.FieldNumber(0, -10, 10), "PIVOT_X")
+        .appendField("Y:")
+        .appendField(new Blockly.FieldNumber(0, -10, 10), "PIVOT_Y")
+        .appendField("Z:")
+        .appendField(new Blockly.FieldNumber(0, -10, 10), "PIVOT_Z");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(35);
+    this.setTooltip("Memutar kayu dengan sudut, arah sumbu, dan koordinat titik pusat putaran (pivot) kustom.");
   }
 };
 
@@ -94,7 +103,7 @@ Blockly.Blocks['fungsi_sambungan'] = {
   }
 };
 
-// 5. BLOK RAKIT TRUE NESTED (Dua Slot Statement Input Bersusun)
+// 5. BLOK RAKIT NESTED
 Blockly.Blocks['rakit_dua_benda'] = {
   init: function() {
     this.appendDummyInput()
