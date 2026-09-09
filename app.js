@@ -1,4 +1,4 @@
-// Variable Global 3D, Splitter, & Fisika
+// Variable Global 3D & Fisika
 let scene, camera, renderer, controls;
 let worldGroup, gridHelper;
 let workspace;
@@ -16,31 +16,26 @@ window.addEventListener('load', () => {
   }, 100);
 });
 
-// 1. Fitur Drag Splitter (Resizable Panel)
 function initSplitter() {
   const splitter = document.getElementById('dragSplitter');
   const leftPanel = document.getElementById('blocklyDiv');
   const container = document.getElementById('main-container');
   let isDragging = false;
 
-  splitter.addEventListener('mousedown', (e) => {
+  splitter.addEventListener('mousedown', () => {
     isDragging = true;
     document.body.style.cursor = 'col-resize';
   });
 
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    
     const containerRect = container.getBoundingClientRect();
     let newLeftWidth = e.clientX - containerRect.left;
     
-    // Batas minimum & maksimum panel
     if (newLeftWidth < 200) newLeftWidth = 200;
     if (newLeftWidth > containerRect.width - 200) newLeftWidth = containerRect.width - 200;
 
     leftPanel.style.width = `${newLeftWidth}px`;
-    
-    // Trigger Resize Blockly & Three.js Canvas
     if (workspace) Blockly.svgResize(workspace);
     onWindowResize();
   });
@@ -53,7 +48,6 @@ function initSplitter() {
   });
 }
 
-// 2. Inisialisasi Blockly
 function initBlockly() {
   const blocklyArea = document.getElementById('blocklyDiv');
   const toolboxXml = document.getElementById('toolbox');
@@ -69,7 +63,6 @@ function initBlockly() {
   workspace.addChangeListener(updateSimulation);
 }
 
-// 3. Inisialisasi Three.js Canvas
 function initThreeJS() {
   const container = document.getElementById('canvas3DContainer');
   if (!container) return;
@@ -106,7 +99,7 @@ function initThreeJS() {
   const axesHelper = new THREE.AxesHelper(4);
   scene.add(axesHelper);
 
-  // Loop Render & Engine Fisika Uji Gempa
+  // Engine Fisika Simulasi Gempa
   function animate() {
     requestAnimationFrame(animate);
 
@@ -117,7 +110,6 @@ function initThreeJS() {
       gridHelper.position.x = shakeX;
       gridHelper.position.z = shakeZ;
 
-      // Evaluasi Perilaku Fisika Tiap Kayu saat Gempa
       activeWoodComponents.forEach((item) => {
         const mesh = item.mesh;
 
@@ -132,12 +124,14 @@ function initThreeJS() {
             mesh.position.y = 0.3;
           }
         } else if (item.jointStatus === 'LOOSE') {
-          // KASUS 2: Mleyot Permanen (Sumbu Miring)
-          mesh.rotation.z = Math.sin(quakeTime) * 0.15 + 0.25;
-          mesh.rotation.x = 0.1;
+          // KASUS 2: Mleyot (Miring jika tidak ada penguat diagonal/pasak presisi)
+          const mleyotFactor = item.hasDiagonalBrace ? 0.02 : 0.2; // Penguat diagonal mengurangi mleyot!
+          mesh.rotation.z = Math.sin(quakeTime) * mleyotFactor + (item.hasDiagonalBrace ? 0 : 0.25);
+          mesh.rotation.x = 0.05;
         } else if (item.jointStatus === 'PRECISE') {
-          // KASUS 3: Meredam Gempa Secara Fleksibel & Kokoh
-          mesh.rotation.z = Math.sin(quakeTime * 2) * 0.03;
+          // KASUS 3: Kokoh Meredam Gempa
+          const dampFactor = item.hasDiagonalBrace ? 0.01 : 0.03;
+          mesh.rotation.z = Math.sin(quakeTime * 2) * dampFactor;
         }
       });
     } else {
@@ -184,7 +178,6 @@ function zoomOutCamera() {
   }
 }
 
-// 4. Handler Simulasi Uji Gempa (Pengunci & Evaluator)
 function toggleEarthquake() {
   isQuaking = !isQuaking;
   const btn = document.getElementById('btnQuake');
@@ -194,18 +187,18 @@ function toggleEarthquake() {
     btn.classList.add('active');
     btn.innerText = '⏹️ Hentikan Gempa';
     
-    // Evaluasi Ketahanan Gempa Setelah Tombol Diklik
     let hasNoJoint = activeWoodComponents.some(c => c.jointStatus === 'NO_JOINT');
     let hasLoose   = activeWoodComponents.some(c => c.jointStatus === 'LOOSE');
+    let hasDiagonal = activeWoodComponents.some(c => c.hasDiagonalBrace);
 
     if (activeWoodComponents.length === 0) {
       status.innerText = 'Status: Belum ada kayu untuk diuji!';
       status.style.color = '#666';
     } else if (hasNoJoint) {
-      status.innerText = '💥 BANGUNAN AMBRUK! (Ada kayu tanpa sambungan)';
+      status.innerText = '💥 BANGUNAN AMBRUK! (Ada kayu tanpa perakitan/sambungan)';
       status.style.color = '#d32f2f';
-    } else if (hasLoose) {
-      status.innerText = '⚠️ BANGUNAN MLEYOT! (Sambungan longgar/renggang)';
+    } else if (hasLoose && !hasDiagonal) {
+      status.innerText = '⚠️ BANGUNAN MLEYOT! (Sambungan longgar & tanpa penguat diagonal)';
       status.style.color = '#ff9800';
     } else {
       status.innerText = '✅ BANGUNAN KOKOH & TAHAN GEMPA!';
@@ -216,11 +209,10 @@ function toggleEarthquake() {
     btn.innerText = '🫨 Uji Gempa';
     status.innerText = 'Status Bangunan: Siap Diuji';
     status.style.color = '#333';
-    updateSimulation(); // Reset posisi kayu ke kondisi awal
+    updateSimulation();
   }
 }
 
-// 5. Re-build Bangunan 3D Berdasarkan Blok Siswa
 function updateSimulation() {
   if (!workspace || !worldGroup) return;
 
@@ -246,9 +238,9 @@ function buildWoodComponent(block) {
   const l = parseFloat(block.getFieldValue('DIM_L'));
   const t = parseFloat(block.getFieldValue('DIM_T'));
 
-  // Default Material
   let colorVal = 0x8B5A2B;
   if (jenis === 'BLANDAR') colorVal = 0xCD853F;
+  else if (jenis === 'DIAGONAL') colorVal = 0xA0522D;
   else if (jenis === 'ANDER') colorVal = 0xD2691E;
   else if (jenis === 'UMPAK') colorVal = 0x7F8C8D;
 
@@ -263,17 +255,28 @@ function buildWoodComponent(block) {
   mesh.position.y = t / 2;
 
   let jointStatus = 'NO_JOINT';
+  let hasDiagonalBrace = (jenis === 'DIAGONAL');
 
-  // Iterasi Blok Modifikasi Bersarang
+  // Iterasi Blok Operasi Bersarang
   let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
   while (innerBlock) {
-    if (innerBlock.type === 'transformasi_posisi') {
+    if (innerBlock.type === 'rakit_sambungan') {
+      const angle = parseFloat(innerBlock.getFieldValue('SUDUT_DERAJAT'));
+      const axis  = innerBlock.getFieldValue('SUMBU_ROTASI');
+      const rad = (angle * Math.PI) / 180;
+
+      if (axis === 'Y') mesh.rotation.y += rad;
+      else if (axis === 'Z') mesh.rotation.z += rad;
+      else if (axis === 'X') mesh.rotation.x += rad;
+
+      // Rotasi 45 Derajat menandakan penguat diagonal
+      if (Math.abs(angle % 180) === 45) {
+        hasDiagonalBrace = true;
+      }
+    } else if (innerBlock.type === 'transformasi_posisi') {
       mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X'));
       mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Y'));
       mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Z'));
-    } else if (innerBlock.type === 'transformasi_rotasi') {
-      const rotY = parseFloat(innerBlock.getFieldValue('ROT_Y'));
-      mesh.rotation.y += (rotY * Math.PI) / 180;
     } else if (innerBlock.type === 'transformasi_tampilan') {
       const c = parseInt(innerBlock.getFieldValue('WARNA'));
       const op = parseFloat(innerBlock.getFieldValue('OPASITAS'));
@@ -291,12 +294,12 @@ function buildWoodComponent(block) {
       } else if (sizePasak < sizeLubang) {
         jointStatus = 'LOOSE';
       } else {
-        jointStatus = 'NO_JOINT'; // Pasak kegedean / tidak muat
+        jointStatus = 'NO_JOINT';
       }
     }
     innerBlock = innerBlock.getNextBlock();
   }
 
   worldGroup.add(mesh);
-  activeWoodComponents.push({ mesh, jointStatus, jenis });
+  activeWoodComponents.push({ mesh, jointStatus, jenis, hasDiagonalBrace });
 }
