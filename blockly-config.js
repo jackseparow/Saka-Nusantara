@@ -1,5 +1,5 @@
 /**
- * Definisi Blok Custom Saka Nusantara
+ * Definisi Blok Custom Saka Nusantara (Sudah Dibenarkan Tanpa FieldAngle)
  */
 
 // 1. Tambah Benda Kerja
@@ -29,7 +29,7 @@ Blockly.Blocks['tambah_benda_kerja'] = {
   }
 };
 
-// 2. Blok Perakitan & Orientasi Sudut (Nested Block)
+// 2. Blok Perakitan & Orientasi Sudut (Memakai FieldNumber Biasa)
 Blockly.Blocks['rakit_sambungan'] = {
   init: function() {
     this.appendDummyInput()
@@ -39,8 +39,8 @@ Blockly.Blocks['rakit_sambungan'] = {
           ["Sambung Lurus (Memperpanjang)", "LURUS"]
         ]), "JENIS_SAMBUNGAN");
     this.appendDummyInput()
-        .appendField("📐 Sudut Sambungan:")
-        .appendField(new Blockly.FieldAngle(90), "SUDUT_DERAJAT")
+        .appendField("📐 Sudut (°):")
+        .appendField(new Blockly.FieldNumber(90, 0, 360), "SUDUT_DERAJAT")
         .appendField("Sumbu:")
         .appendField(new Blockly.FieldDropdown([
           ["Sumbu Y (Mendatar / Horizontal)", "Y"],
@@ -124,7 +124,7 @@ Blockly.Blocks['transformasi_tampilan'] = {
   }
 };
 
-// Dynamic String XML Toolbox (Anti-Fail / Anti-Cache)
+// Dynamic String XML Toolbox
 window.SAKA_TOOLBOX_XML = `
 <xml>
   <category name="1. Tambah Benda Kerja" colour="#2e7d32">
