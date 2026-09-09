@@ -91,7 +91,6 @@ body {
   background-color: #fff;
 }
 
-/* Splitter Container (Resizable) */
 #main-container {
   display: flex;
   flex: 1;
@@ -106,7 +105,6 @@ body {
   min-width: 200px;
 }
 
-/* Garis Resizer/Splitter */
 #dragSplitter {
   width: 8px;
   height: 100%;
@@ -134,7 +132,6 @@ body {
   position: relative;
 }
 
-/* Toolbar Navigasi Kamera & Gempa */
 .tinkercad-toolbar {
   position: absolute;
   top: 15px;
@@ -186,7 +183,6 @@ body {
   background-color: #ff9800;
 }
 
-/* Status Banner Netral */
 .quake-status-box {
   position: absolute;
   top: 15px;
