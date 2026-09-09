@@ -1,8 +1,8 @@
 /**
- * Definisi Blok Custom Saka Nusantara - Alur Perakitan Berjenjang
+ * Definisi Blok Custom Saka Nusantara - Murni Nested Statement Input
  */
 
-// 1. Benda Kerja Dasar
+// 1. Blok Benda Kerja Dasar
 Blockly.Blocks['tambah_benda_kerja'] = {
   init: function() {
     this.appendDummyInput()
@@ -11,10 +11,9 @@ Blockly.Blocks['tambah_benda_kerja'] = {
           ["Soko Guru (Tiang)", "SOKO"],
           ["Blandar (Balok Mendatar)", "BLANDAR"],
           ["Skor (Penguat Diagonal)", "DIAGONAL"],
+          ["Pasak Kayu (Pengunci)", "PASAK"],
           ["Umpak (Alas Batu)", "UMPAK"]
-        ]), "JENIS_BENDA")
-        .appendField("Nama ID:")
-        .appendField(new Blockly.FieldTextInput("kayu_1"), "ID_BENDA");
+        ]), "JENIS_BENDA");
     this.appendDummyInput()
         .appendField("📐 Dimensi (P x L x T):")
         .appendField(new Blockly.FieldNumber(1, 0.2, 10), "DIM_P")
@@ -23,21 +22,21 @@ Blockly.Blocks['tambah_benda_kerja'] = {
         .appendField("x")
         .appendField(new Blockly.FieldNumber(4, 0.2, 10), "DIM_T");
     this.appendStatementInput("SUB_OPERASI")
-        .appendField("Atur Posisi & Pahatan:");
+        .appendField("Atur Pahatan & Transformasi:");
     this.setNextStatement(true);
     this.setPreviousStatement(true);
     this.setColour(140);
   }
 };
 
-// 2. Transformasi: Translasi (Geser)
+// 2. Transformasi: Translasi (Geser Posisi di Ruang 3D)
 Blockly.Blocks['transformasi_translasi'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("📍 Translasi (Geser) ->")
+        .appendField("📍 Geser Posisi ->")
         .appendField("X:")
         .appendField(new Blockly.FieldNumber(0, -10, 10), "POS_X")
-        .appendField("Y:")
+        .appendField("Y (Mendatar):")
         .appendField(new Blockly.FieldNumber(0, -10, 10), "POS_Y")
         .appendField("Z (Tinggi):")
         .appendField(new Blockly.FieldNumber(0, 0, 10), "POS_Z");
@@ -47,7 +46,7 @@ Blockly.Blocks['transformasi_translasi'] = {
   }
 };
 
-// 3. Transformasi: Rotasi Kustom dengan Pusat Putaran (Pivot)
+// 3. Transformasi: Rotasi Kustom
 Blockly.Blocks['transformasi_rotasi_pivot'] = {
   init: function() {
     this.appendDummyInput()
@@ -59,13 +58,6 @@ Blockly.Blocks['transformasi_rotasi_pivot'] = {
           ["Sumbu X (Mendatar)", "X"],
           ["Sumbu Y (Miring)", "Y"]
         ]), "SUMBU");
-    this.appendDummyInput()
-        .appendField("🎯 Pusat Putaran (Pivot):")
-        .appendField(new Blockly.FieldDropdown([
-          ["Pusat Objek (Tengah)", "CENTER"],
-          ["Ujung Bawah / Pangkal", "START"],
-          ["Ujung Atas / Ujung", "END"]
-        ]), "PIVOT");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(35);
@@ -102,30 +94,26 @@ Blockly.Blocks['fungsi_sambungan'] = {
   }
 };
 
-// 5. BLOK RAKIT BERJENJANG (Nested Grouping Block)
+// 5. BLOK RAKIT TRUE NESTED (Dua Slot Statement Input Bersusun)
 Blockly.Blocks['rakit_dua_benda'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("🔗 RAKIT / KUNCI GABUNGAN");
-    this.appendDummyInput()
-        .appendField("Induk (Saka/Base):")
-        .appendField(new Blockly.FieldTextInput("kayu_1"), "ID_INDUK");
-    this.appendDummyInput()
-        .appendField("Anak (Blandar/Sambungan):")
-        .appendField(new Blockly.FieldTextInput("kayu_2"), "ID_ANAK");
-    this.appendStatementInput("OPERASI_RAKIT")
-        .appendField("Atur Kuncian Sambungan:");
+        .appendField("🔗 RAKIT / GABUNGKAN BENDA");
+    this.appendStatementInput("BENDA_1")
+        .appendField("📌 Benda 1 (Utama / Base):");
+    this.appendStatementInput("BENDA_2")
+        .appendField("🧩 Benda 2 (Sambungan / Pasak):");
     this.setPreviousStatement(true);
     this.setNextStatement(true);
     this.setColour(260);
-    this.setTooltip("Menyatukan dua benda kerja menjadi satu kesatuan struktur pada lokasi takikan.");
+    this.setTooltip("Gabungkan dua benda kerja yang sudah dipahat dan diatur posisinya menjadi satu kesatuan struktur.");
   }
 };
 
 // XML Toolbox Dynamic String
 window.SAKA_TOOLBOX_XML = `
 <xml>
-  <category name="1. Tambah Benda Kerja" colour="#2e7d32">
+  <category name="1. Benda Kerja" colour="#2e7d32">
     <block type="tambah_benda_kerja"></block>
   </category>
   <category name="2. Transformasi &amp; Posisi" colour="#f57c00">
@@ -135,7 +123,7 @@ window.SAKA_TOOLBOX_XML = `
   <category name="3. Pahatan &amp; Coakan" colour="#0288d1">
     <block type="fungsi_sambungan"></block>
   </category>
-  <category name="4. Rakit Berjenjang" colour="#4a148c">
+  <category name="4. Rakit / Gabungkan" colour="#4a148c">
     <block type="rakit_dua_benda"></block>
   </category>
 </xml>
