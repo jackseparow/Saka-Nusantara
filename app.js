@@ -5,7 +5,7 @@ let workspace;
 let isQuaking = false;
 let quakeTime = 0;
 
-let assembledGroups = []; // Registry kesatuan struktur rakitan
+let assembledGroups = [];
 
 window.addEventListener('load', () => {
   setTimeout(() => {
@@ -92,7 +92,6 @@ function initThreeJS() {
   worldGroup = new THREE.Group();
   scene.add(worldGroup);
 
-  // Strimin Workplane
   gridStrimin = new THREE.GridHelper(20, 40, 0x0055ff, 0xa0c4df);
   gridStrimin.position.y = 0;
   scene.add(gridStrimin);
@@ -101,7 +100,6 @@ function initThreeJS() {
   axesHelper.position.set(0, 0.01, 0);
   scene.add(axesHelper);
 
-  // Loop Render & Simulasi Gempa
   function animate() {
     requestAnimationFrame(animate);
 
@@ -117,11 +115,9 @@ function initThreeJS() {
         const grp = groupData.groupObject;
 
         if (groupData.isLocked) {
-          // Kesatuan Terikat Sempurna: Berayun Bersama Meredam Gempa
           grp.rotation.z = Math.sin(quakeTime * 2) * 0.02;
           grp.rotation.x = Math.cos(quakeTime * 2) * 0.02;
         } else {
-          // Kuncian Renggang / Asal Nempel: Terpisah dan Ambruk ke Tanah
           grp.children.forEach((child) => {
             if (child.position.y > 0.3) {
               child.position.y -= 0.12;
@@ -199,7 +195,6 @@ function toggleEarthquake() {
   }
 }
 
-// Executer Utama Pemroses Logika Blok
 function updateSimulation() {
   if (!workspace || !worldGroup) return;
 
@@ -216,7 +211,6 @@ function updateSimulation() {
     if (block.type === 'rakit_dua_benda') {
       processRakitBlock(block);
     } else if (block.type === 'tambah_benda_kerja') {
-      // Jika ada benda berdiri sendiri tanpa blok rakit
       const standaloneGroup = new THREE.Group();
       const res = buildSingleMesh(block);
       if (res.mesh) {
@@ -232,7 +226,6 @@ function processRakitBlock(rakitBlock) {
   const combinedGroup = new THREE.Group();
   let isAllPrecise = true;
 
-  // Process Benda 1
   const b1Block = rakitBlock.getInputTargetBlock('BENDA_1');
   if (b1Block && b1Block.type === 'tambah_benda_kerja') {
     const res1 = buildSingleMesh(b1Block);
@@ -242,7 +235,6 @@ function processRakitBlock(rakitBlock) {
     }
   }
 
-  // Process Benda 2
   const b2Block = rakitBlock.getInputTargetBlock('BENDA_2');
   if (b2Block && b2Block.type === 'tambah_benda_kerja') {
     const res2 = buildSingleMesh(b2Block);
@@ -275,7 +267,7 @@ function buildSingleMesh(block) {
   const geo = new THREE.BoxGeometry(p, t, l);
   const mesh = new THREE.Mesh(geo, mat);
   
-  // Posisi Dasar di Atas Tanah (Workplane)
+  // Posisi Dasar di Atas Workplane
   mesh.position.set(0, t / 2, 0);
 
   let isPresise = false;
@@ -284,16 +276,34 @@ function buildSingleMesh(block) {
   while (innerBlock) {
     if (innerBlock.type === 'transformasi_translasi') {
       mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X')) || 0;
-      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; // Sumbu Mendatar
-      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; // Sumbu Tinggi
+      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; 
+      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; 
     } else if (innerBlock.type === 'transformasi_rotasi_pivot') {
-      const angle = parseFloat(innerBlock.getFieldValue('SUDUT')) || 0;
-      const axis  = innerBlock.getFieldValue('SUMBU');
-      const rad   = (angle * Math.PI) / 180;
+      const angle  = parseFloat(innerBlock.getFieldValue('SUDUT')) || 0;
+      const axis   = innerBlock.getFieldValue('SUMBU');
+      const pivotX = parseFloat(innerBlock.getFieldValue('PIVOT_X')) || 0;
+      const pivotY = parseFloat(innerBlock.getFieldValue('PIVOT_Y')) || 0;
+      const pivotZ = parseFloat(innerBlock.getFieldValue('PIVOT_Z')) || 0;
+      const rad    = (angle * Math.PI) / 180;
+
+      // Matriks Rotasi dengan Titik Pivot Kustom (Pivot Point Rotation)
+      const pivotVector = new THREE.Vector3(pivotX, pivotZ, pivotY);
+      
+      // 1. Geser Objek ke Titik Pivot
+      mesh.position.sub(pivotVector);
+      
+      // 2. Terapkan Rotasi Sumbu Kustom
+      if (axis === 'Z') mesh.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), rad);
+      else if (axis === 'X') mesh.position.applyAxisAngle(new THREE.Vector3(1, 0, 0), rad);
+      else if (axis === 'Y') mesh.position.applyAxisAngle(new THREE.Vector3(0, 0, 1), rad);
 
       if (axis === 'Z') mesh.rotation.y += rad;
       else if (axis === 'X') mesh.rotation.x += rad;
       else if (axis === 'Y') mesh.rotation.z += rad;
+
+      // 3. Kembalikan Posisi Objek dari Titik Pivot
+      mesh.position.add(pivotVector);
+
     } else if (innerBlock.type === 'fungsi_sambungan') {
       const sizeLubang = parseInt(innerBlock.getFieldValue('UKURAN_LUBANG'));
       const sizePasak  = parseInt(innerBlock.getFieldValue('UKURAN_PASAK'));
