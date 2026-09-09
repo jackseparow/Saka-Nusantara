@@ -24,7 +24,7 @@
       </div>
       <div class="header-titles">
         <h1>🪵 Saka Nusantara</h1>
-        <p class="subtitle">Logika Sambungan Kayu & Simulasi Arsitektur Tradisional</p>
+        <p class="subtitle">Logika Perakitan Sambungan Kayu & Simulasi Arsitektur Tradisional</p>
       </div>
     </div>
 
@@ -38,17 +38,13 @@
 
   <!-- Layout Main Container dengan Resizable Splitter -->
   <div id="main-container">
-    <!-- Area Workspace Blockly (Editor) -->
     <div id="blocklyDiv"></div>
 
-    <!-- Garis Pembatas yang Bisa Di-drag -->
     <div id="dragSplitter" title="Geser untuk mengatur lebar panel"></div>
 
-    <!-- Area Preview 3D (Viewer) -->
     <div id="rightPanel">
       <div id="canvas3DContainer">
         
-        <!-- Toolbar Navigasi & Uji Gempa -->
         <div class="tinkercad-toolbar">
           <button onclick="resetCameraHome()" title="Kembali ke Tampilan Awal (Home)">🏠</button>
           <button onclick="zoomInCamera()" title="Perbesar (Zoom In)">➕</button>
@@ -57,10 +53,8 @@
           <button id="btnQuake" onclick="toggleEarthquake()" title="Simulasi Uji Ketahanan Gempa">🫨 Uji Gempa</button>
         </div>
 
-        <!-- Indicator Status Netral (Tanpa Bocoran Hasil) -->
         <div id="quakeStatus" class="quake-status-box">Status Bangunan: Siap Diuji</div>
 
-        <!-- Legenda Workplane & Sumbu -->
         <div class="axes-legend">
           <span class="axis-item">🟦 Workplane</span>
           <span class="axis-item">🔴 X (Lebar)</span>
@@ -75,17 +69,18 @@
     <category name="1. Tambah Benda Kerja" colour="#2e7d32">
       <block type="tambah_benda_kerja"></block>
     </category>
-    <category name="2. Sambungan & Coakan" colour="#0288d1">
+    <category name="2. Perakitan & Sudut" colour="#4a148c">
+      <block type="rakit_sambungan"></block>
+    </category>
+    <category name="3. Coakan & Pasak" colour="#0288d1">
       <block type="fungsi_sambungan"></block>
     </category>
-    <category name="3. Transformasi & Tampilan" colour="#f57c00">
+    <category name="4. Posisi & Tampilan" colour="#f57c00">
       <block type="transformasi_posisi"></block>
-      <block type="transformasi_rotasi"></block>
       <block type="transformasi_tampilan"></block>
     </category>
   </xml>
 
-  <!-- Skrip Aplikasi -->
   <script src="blockly-config.js"></script>
   <script src="app.js"></script>
 </body>
