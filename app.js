@@ -263,11 +263,14 @@ function buildSingleMesh(block) {
   else if (jenis === 'PASAK') colorVal = 0xD2691E;
   else if (jenis === 'UMPAK') colorVal = 0x7F8C8D;
 
-  const mat = new THREE.MeshLambertMaterial({ color: colorVal });
+  const mat = new THREE.MeshLambertMaterial({
+    color: colorVal,
+    transparent: false,
+    opacity: 1.0
+  });
+
   const geo = new THREE.BoxGeometry(p, t, l);
   const mesh = new THREE.Mesh(geo, mat);
-  
-  // Posisi Dasar di Atas Workplane
   mesh.position.set(0, t / 2, 0);
 
   let isPresise = false;
@@ -286,13 +289,9 @@ function buildSingleMesh(block) {
       const pivotZ = parseFloat(innerBlock.getFieldValue('PIVOT_Z')) || 0;
       const rad    = (angle * Math.PI) / 180;
 
-      // Matriks Rotasi dengan Titik Pivot Kustom (Pivot Point Rotation)
       const pivotVector = new THREE.Vector3(pivotX, pivotZ, pivotY);
-      
-      // 1. Geser Objek ke Titik Pivot
       mesh.position.sub(pivotVector);
       
-      // 2. Terapkan Rotasi Sumbu Kustom
       if (axis === 'Z') mesh.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), rad);
       else if (axis === 'X') mesh.position.applyAxisAngle(new THREE.Vector3(1, 0, 0), rad);
       else if (axis === 'Y') mesh.position.applyAxisAngle(new THREE.Vector3(0, 0, 1), rad);
@@ -301,9 +300,16 @@ function buildSingleMesh(block) {
       else if (axis === 'X') mesh.rotation.x += rad;
       else if (axis === 'Y') mesh.rotation.z += rad;
 
-      // 3. Kembalikan Posisi Objek dari Titik Pivot
       mesh.position.add(pivotVector);
 
+    } else if (innerBlock.type === 'transformasi_tampilan') {
+      const c  = parseInt(innerBlock.getFieldValue('WARNA'));
+      const op = parseFloat(innerBlock.getFieldValue('OPASITAS'));
+      if (!isNaN(c)) mesh.material.color.setHex(c);
+      if (!isNaN(op)) {
+        mesh.material.opacity = op;
+        mesh.material.transparent = op < 1.0;
+      }
     } else if (innerBlock.type === 'fungsi_sambungan') {
       const sizeLubang = parseInt(innerBlock.getFieldValue('UKURAN_LUBANG'));
       const sizePasak  = parseInt(innerBlock.getFieldValue('UKURAN_PASAK'));
