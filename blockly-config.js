@@ -1,5 +1,5 @@
 /**
- * Definisi Blok Custom Saka Nusantara (Termasuk Blok Perakitan Sudut Parametrik)
+ * Definisi Blok Custom Saka Nusantara
  */
 
 // 1. Tambah Benda Kerja
@@ -29,7 +29,7 @@ Blockly.Blocks['tambah_benda_kerja'] = {
   }
 };
 
-// 2. BLOK BARU: Blok Perakitan & Orientasi Sudut (Nested Block)
+// 2. Blok Perakitan & Orientasi Sudut (Nested Block)
 Blockly.Blocks['rakit_sambungan'] = {
   init: function() {
     this.appendDummyInput()
@@ -123,3 +123,22 @@ Blockly.Blocks['transformasi_tampilan'] = {
     this.setColour(35);
   }
 };
+
+// Dynamic String XML Toolbox (Anti-Fail / Anti-Cache)
+window.SAKA_TOOLBOX_XML = `
+<xml>
+  <category name="1. Tambah Benda Kerja" colour="#2e7d32">
+    <block type="tambah_benda_kerja"></block>
+  </category>
+  <category name="2. Perakitan &amp; Sudut" colour="#4a148c">
+    <block type="rakit_sambungan"></block>
+  </category>
+  <category name="3. Coakan &amp; Pasak" colour="#0288d1">
+    <block type="fungsi_sambungan"></block>
+  </category>
+  <category name="4. Posisi &amp; Tampilan" colour="#f57c00">
+    <block type="transformasi_posisi"></block>
+    <block type="transformasi_tampilan"></block>
+  </category>
+</xml>
+`;
