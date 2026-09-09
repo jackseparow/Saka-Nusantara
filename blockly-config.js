@@ -46,7 +46,7 @@ Blockly.Blocks['transformasi_translasi'] = {
   }
 };
 
-// 3. Transformasi: Rotasi Kustom dengan Koordinat Pusat Rotasi (Pivot X, Y, Z)
+// 3. Transformasi: Rotasi Kustom dengan Pusat Rotasi (Pivot X, Y, Z)
 Blockly.Blocks['transformasi_rotasi_pivot'] = {
   init: function() {
     this.appendDummyInput()
@@ -59,7 +59,7 @@ Blockly.Blocks['transformasi_rotasi_pivot'] = {
           ["Sumbu Y (Panjang / Depan-Belakang)", "Y"]
         ]), "SUMBU");
     this.appendDummyInput()
-        .appendField("🎯 Koordinat Pusat Rotasi (Pivot Point):")
+        .appendField("🎯 Pusat Rotasi (Pivot):")
         .appendField("X:")
         .appendField(new Blockly.FieldNumber(0, -10, 10), "PIVOT_X")
         .appendField("Y:")
@@ -73,7 +73,32 @@ Blockly.Blocks['transformasi_rotasi_pivot'] = {
   }
 };
 
-// 4. Pahatan & Coakan Sambungan
+// 4. Transformasi: Tampilan Warna & Transparansi
+Blockly.Blocks['transformasi_tampilan'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("🎨 Tampilan -> Warna:")
+        .appendField(new Blockly.FieldDropdown([
+          ["Cokelat Jati", "0x8B5A2B"],
+          ["Cokelat Pinus", "0xCD853F"],
+          ["Merah Kayu", "0xA0522D"],
+          ["Cokelat Terang", "0xD2691E"],
+          ["Abu-abu Batu", "0x7F8C8D"]
+        ]), "WARNA")
+        .appendField(" | Transparan:")
+        .appendField(new Blockly.FieldDropdown([
+          ["Padat (100%)", "1.0"],
+          ["Semi Transparan (50%)", "0.5"],
+          ["Sangat Transparan (20%)", "0.2"]
+        ]), "OPASITAS");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(35);
+    this.setTooltip("Ubah warna dan opasitas kayu agar coakan/sambungan terlihat jelas.");
+  }
+};
+
+// 5. Pahatan & Coakan Sambungan
 Blockly.Blocks['fungsi_sambungan'] = {
   init: function() {
     this.appendDummyInput()
@@ -103,7 +128,7 @@ Blockly.Blocks['fungsi_sambungan'] = {
   }
 };
 
-// 5. BLOK RAKIT NESTED
+// 6. BLOK RAKIT NESTED
 Blockly.Blocks['rakit_dua_benda'] = {
   init: function() {
     this.appendDummyInput()
@@ -125,9 +150,10 @@ window.SAKA_TOOLBOX_XML = `
   <category name="1. Benda Kerja" colour="#2e7d32">
     <block type="tambah_benda_kerja"></block>
   </category>
-  <category name="2. Transformasi &amp; Posisi" colour="#f57c00">
+  <category name="2. Transformasi &amp; Tampilan" colour="#f57c00">
     <block type="transformasi_translasi"></block>
     <block type="transformasi_rotasi_pivot"></block>
+    <block type="transformasi_tampilan"></block>
   </category>
   <category name="3. Pahatan &amp; Coakan" colour="#0288d1">
     <block type="fungsi_sambungan"></block>
