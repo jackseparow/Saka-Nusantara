@@ -1,16 +1,17 @@
 /**
- * Definisi Blok Custom Saka Nusantara
+ * Definisi Blok Custom Saka Nusantara (Termasuk Blok Perakitan Sudut Parametrik)
  */
 
-// 1. Benda Kerja
+// 1. Tambah Benda Kerja
 Blockly.Blocks['tambah_benda_kerja'] = {
   init: function() {
     this.appendDummyInput()
         .appendField("🪵 TAMBAH BENDA:")
         .appendField(new Blockly.FieldDropdown([
-          ["Soko Guru (Tiang)", "SOKO"],
-          ["Blandar (Balok)", "BLANDAR"],
-          ["Ander (Pengunci)", "ANDER"],
+          ["Soko Guru (Tiang Vertikal)", "SOKO"],
+          ["Blandar / Sunduk (Balok Horisontal)", "BLANDAR"],
+          ["Skor / Sokong (Penguat Diagonal)", "DIAGONAL"],
+          ["Ander (Pengunci Atas)", "ANDER"],
           ["Umpak (Alas Batu)", "UMPAK"]
         ]), "JENIS_BENDA");
     this.appendDummyInput()
@@ -21,18 +22,43 @@ Blockly.Blocks['tambah_benda_kerja'] = {
         .appendField("x")
         .appendField(new Blockly.FieldNumber(4, 0.2, 10), "DIM_T");
     this.appendStatementInput("SUB_OPERASI")
-        .appendField("Operasi / Modifikasi:");
+        .appendField("Operasi / Perakitan:");
     this.setNextStatement(true);
     this.setPreviousStatement(true);
     this.setColour(140);
   }
 };
 
-// 2. Sambungan & Coakan
+// 2. BLOK BARU: Blok Perakitan & Orientasi Sudut (Nested Block)
+Blockly.Blocks['rakit_sambungan'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("🔗 RAKIT / SAMBUNGKAN:")
+        .appendField(new Blockly.FieldDropdown([
+          ["Sambung Sudut (Siku / Diagonal)", "SUDUT"],
+          ["Sambung Lurus (Memperpanjang)", "LURUS"]
+        ]), "JENIS_SAMBUNGAN");
+    this.appendDummyInput()
+        .appendField("📐 Sudut Sambungan:")
+        .appendField(new Blockly.FieldAngle(90), "SUDUT_DERAJAT")
+        .appendField("Sumbu:")
+        .appendField(new Blockly.FieldDropdown([
+          ["Sumbu Y (Mendatar / Horizontal)", "Y"],
+          ["Sumbu Z (Miring / Vertikal Diagonal)", "Z"],
+          ["Sumbu X (Kemiringan Atap)", "X"]
+        ]), "SUMBU_ROTASI");
+    this.setPreviousStatement(true);
+    this.setNextStatement(true);
+    this.setColour(260);
+    this.setTooltip("Rakit kayu dengan menentukan sudut kemiringan/persambungan (misal 90° untuk siku, 45° untuk penguat diagonal).");
+  }
+};
+
+// 3. Coakan & Pasak Pengunci
 Blockly.Blocks['fungsi_sambungan'] = {
   init: function() {
     this.appendDummyInput()
-        .appendField("🔨 Sambungan:")
+        .appendField("🔨 Teknik Pahatan:")
         .appendField(new Blockly.FieldDropdown([
           ["Purus & Lubang (Mortise-Tenon)", "MORTISE"],
           ["Ekor Burung (Dovetail)", "DOVETAIL"],
@@ -58,7 +84,7 @@ Blockly.Blocks['fungsi_sambungan'] = {
   }
 };
 
-// 3. Transformasi Posisi
+// 4. Transformasi Posisi
 Blockly.Blocks['transformasi_posisi'] = {
   init: function() {
     this.appendDummyInput()
@@ -75,25 +101,7 @@ Blockly.Blocks['transformasi_posisi'] = {
   }
 };
 
-// 4. Transformasi Rotasi
-Blockly.Blocks['transformasi_rotasi'] = {
-  init: function() {
-    this.appendDummyInput()
-        .appendField("🔄 Putar Objek ->")
-        .appendField("Sumbu Y:")
-        .appendField(new Blockly.FieldDropdown([
-          ["0°", "0"],
-          ["90°", "90"],
-          ["180°", "180"],
-          ["270°", "270"]
-        ]), "ROT_Y");
-    this.setPreviousStatement(true);
-    this.setNextStatement(true);
-    this.setColour(35);
-  }
-};
-
-// 5. Transformasi Tampilan (Warna & Transparansi)
+// 5. Tampilan Warna & Transparansi
 Blockly.Blocks['transformasi_tampilan'] = {
   init: function() {
     this.appendDummyInput()
