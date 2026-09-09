@@ -102,7 +102,7 @@ body {
 
 #blocklyDiv {
   height: 100%;
-  width: 50%; /* Initial width */
+  width: 50%;
   min-width: 200px;
 }
 
