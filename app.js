@@ -23,6 +23,8 @@ function initSplitter() {
   const container = document.getElementById('main-container');
   let isDragging = false;
 
+  if (!splitter || !leftPanel || !container) return;
+
   splitter.addEventListener('mousedown', () => {
     isDragging = true;
     document.body.style.cursor = 'col-resize';
@@ -116,7 +118,6 @@ function initThreeJS() {
         const mesh = item.mesh;
 
         if (item.jointStatus === 'NO_JOINT') {
-          // KASUS 1: Ambruk & Tergeletak
           if (mesh.position.y > 0.3) {
             mesh.position.y -= 0.15;
             mesh.rotation.x += 0.08;
@@ -126,12 +127,10 @@ function initThreeJS() {
             mesh.position.y = 0.3;
           }
         } else if (item.jointStatus === 'LOOSE') {
-          // KASUS 2: Mleyot Permanen
           const mleyotFactor = item.hasDiagonalBrace ? 0.02 : 0.2;
           mesh.rotation.z = Math.sin(quakeTime) * mleyotFactor + (item.hasDiagonalBrace ? 0 : 0.25);
           mesh.rotation.x = 0.05;
         } else if (item.jointStatus === 'PRECISE') {
-          // KASUS 3: Kokoh Meredam Gempa
           const dampFactor = item.hasDiagonalBrace ? 0.01 : 0.03;
           mesh.rotation.z = Math.sin(quakeTime * 2) * dampFactor;
         }
@@ -180,7 +179,6 @@ function zoomOutCamera() {
   }
 }
 
-// 4. Handler Simulasi Uji Gempa
 function toggleEarthquake() {
   isQuaking = !isQuaking;
   const btn = document.getElementById('btnQuake');
@@ -220,6 +218,7 @@ function toggleEarthquake() {
 function updateSimulation() {
   if (!workspace || !worldGroup) return;
 
+  // Bersihkan objek 3D lama
   while (worldGroup.children.length > 0) {
     const obj = worldGroup.children[0];
     if (obj.geometry) obj.geometry.dispose();
@@ -230,6 +229,7 @@ function updateSimulation() {
   const topBlocks = workspace.getTopBlocks(true);
 
   topBlocks.forEach((block) => {
+    // Memproses setiap blok "Tambah Benda Kerja"
     if (block.type === 'tambah_benda_kerja') {
       buildWoodComponent(block);
     }
@@ -237,10 +237,10 @@ function updateSimulation() {
 }
 
 function buildWoodComponent(block) {
-  const jenis = block.getFieldValue('JENIS_BENDA');
-  const p = parseFloat(block.getFieldValue('DIM_P'));
-  const l = parseFloat(block.getFieldValue('DIM_L'));
-  const t = parseFloat(block.getFieldValue('DIM_T'));
+  const jenis = block.getFieldValue('JENIS_BENDA') || 'SOKO';
+  const p = Math.max(0.2, parseFloat(block.getFieldValue('DIM_P')) || 1);
+  const l = Math.max(0.2, parseFloat(block.getFieldValue('DIM_L')) || 1);
+  const t = Math.max(0.2, parseFloat(block.getFieldValue('DIM_T')) || 4);
 
   let colorVal = 0x8B5A2B;
   if (jenis === 'BLANDAR') colorVal = 0xCD853F;
@@ -256,16 +256,18 @@ function buildWoodComponent(block) {
 
   const geo = new THREE.BoxGeometry(p, t, l);
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.y = t / 2;
+  mesh.position.y = t / 2; // Berdiri tepat di atas Workplane
 
   let jointStatus = 'NO_JOINT';
   let hasDiagonalBrace = (jenis === 'DIAGONAL');
 
+  // Rekursi/Pemeriksaan Blok Operasi (Di Dalam dan Di Bawahnya)
   let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
+  
   while (innerBlock) {
     if (innerBlock.type === 'rakit_sambungan') {
-      const angle = parseFloat(innerBlock.getFieldValue('SUDUT_DERAJAT'));
-      const axis  = innerBlock.getFieldValue('SUMBU_ROTASI');
+      const angle = parseFloat(innerBlock.getFieldValue('SUDUT_DERAJAT')) || 0;
+      const axis  = innerBlock.getFieldValue('SUMBU_ROTASI') || 'Y';
       const rad = (angle * Math.PI) / 180;
 
       if (axis === 'Y') mesh.rotation.y += rad;
@@ -276,18 +278,20 @@ function buildWoodComponent(block) {
         hasDiagonalBrace = true;
       }
     } else if (innerBlock.type === 'transformasi_posisi') {
-      mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X'));
-      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Y'));
-      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Z'));
+      mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X')) || 0;
+      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0;
+      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0;
     } else if (innerBlock.type === 'transformasi_tampilan') {
       const c = parseInt(innerBlock.getFieldValue('WARNA'));
       const op = parseFloat(innerBlock.getFieldValue('OPASITAS'));
-      mesh.material.color.setHex(c);
-      mesh.material.opacity = op;
-      mesh.material.transparent = op < 1.0;
+      if (!isNaN(c)) mesh.material.color.setHex(c);
+      if (!isNaN(op)) {
+        mesh.material.opacity = op;
+        mesh.material.transparent = op < 1.0;
+      }
     } else if (innerBlock.type === 'fungsi_sambungan') {
-      const sizeLubang = parseInt(innerBlock.getFieldValue('UKURAN_LUBANG'));
-      const sizePasak  = parseInt(innerBlock.getFieldValue('UKURAN_PASAK'));
+      const sizeLubang = parseInt(innerBlock.getFieldValue('UKURAN_LUBANG')) || 0;
+      const sizePasak  = parseInt(innerBlock.getFieldValue('UKURAN_PASAK')) || 0;
 
       if (sizePasak === 0) {
         jointStatus = 'LOOSE';
@@ -299,6 +303,7 @@ function buildWoodComponent(block) {
         jointStatus = 'NO_JOINT';
       }
     }
+    // Lanjut ke blok yang menempel di bawahnya
     innerBlock = innerBlock.getNextBlock();
   }
 
