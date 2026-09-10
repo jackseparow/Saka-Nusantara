@@ -92,14 +92,12 @@ function initThreeJS() {
   worldGroup = new THREE.Group();
   scene.add(worldGroup);
 
-  // =========================================================================
-  // PRESISI 1-TO-1: Grid 30x30 Unit dibagi 30 Kotak (1 Kotak Strimin = 1 Unit)
-  // =========================================================================
+  // PRESISI STRIMIN 1-TO-1 (Grid di-offset 0.5 agar kotak menampung persis koordinat bulat)
   gridStrimin = new THREE.GridHelper(30, 30, 0x0055ff, 0xa0c4df);
-  gridStrimin.position.y = 0;
+  gridStrimin.position.set(0.5, 0, 0.5); 
   scene.add(gridStrimin);
 
-  // Sumbu Koordinat (X=Merah, Y=Hijau, Z=Biru/Tinggi)
+  // Sumbu Koordinat (X=Merah, Y=Hijau/Tinggi, Z=Biru)
   const axesHelper = new THREE.AxesHelper(6);
   axesHelper.position.set(0, 0.01, 0);
   scene.add(axesHelper);
@@ -112,8 +110,8 @@ function initThreeJS() {
       const shakeX = Math.sin(quakeTime * 4) * 0.25;
       const shakeY = Math.cos(quakeTime * 3) * 0.25;
       
-      gridStrimin.position.x = shakeX;
-      gridStrimin.position.z = shakeY;
+      gridStrimin.position.x = 0.5 + shakeX;
+      gridStrimin.position.z = 0.5 + shakeY;
 
       assembledGroups.forEach((groupData) => {
         const grp = groupData.groupObject;
@@ -134,7 +132,7 @@ function initThreeJS() {
         }
       });
     } else {
-      gridStrimin.position.set(0, 0, 0);
+      gridStrimin.position.set(0.5, 0, 0.5);
     }
 
     controls.update();
@@ -273,22 +271,21 @@ function buildSingleMesh(block) {
     opacity: 1.0
   });
 
-  // Geometri Balok (P = Panjang Sumbu X, T = Tinggi Sumbu Y, L = Lebar Sumbu Z)
   const geo = new THREE.BoxGeometry(p, t, l);
+  // PIVOT GEOMETRI PRESISI: Di sudut Bawah-Kiri-Depan (0,0,0)
+  geo.translate(p / 2, t / 2, l / 2);
+
   const mesh = new THREE.Mesh(geo, mat);
-  
-  // Posisi Awal: Berdiri tepat di atas Workplane Strimin
-  mesh.position.set(0, t / 2, 0);
+  mesh.position.set(0, 0, 0);
 
   let isPresise = false;
 
   let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
   while (innerBlock) {
     if (innerBlock.type === 'transformasi_translasi') {
-      // Pergeseran 1-to-1 dengan Kotak Strimin
-      mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X')) || 0; // Geser Kanan-Kiri
-      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; // Geser Depan-Belakang
-      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; // Geser Atas-Bawah
+      mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X')) || 0;
+      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; 
+      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; 
     } else if (innerBlock.type === 'transformasi_rotasi_pivot') {
       const angle  = parseFloat(innerBlock.getFieldValue('SUDUT')) || 0;
       const axis   = innerBlock.getFieldValue('SUMBU');
