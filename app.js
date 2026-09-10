@@ -71,7 +71,7 @@ function initThreeJS() {
   scene.background = new THREE.Color(0xe0e6ed);
 
   camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(12, 10, 14);
+  camera.position.set(15, 12, 18);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -93,14 +93,14 @@ function initThreeJS() {
   scene.add(worldGroup);
 
   // =========================================================================
-  // PERBAIKAN STRIMIN: Grid 20x20 unit dibagi 20 kotak (1 Kotak = 1 Unit Presisi)
+  // PRESISI 1-TO-1: Grid 30x30 Unit dibagi 30 Kotak (1 Kotak Strimin = 1 Unit)
   // =========================================================================
-  gridStrimin = new THREE.GridHelper(20, 20, 0x0055ff, 0xa0c4df);
+  gridStrimin = new THREE.GridHelper(30, 30, 0x0055ff, 0xa0c4df);
   gridStrimin.position.y = 0;
   scene.add(gridStrimin);
 
-  // Sumbu Koordinat (X=Merah, Y=Hijau, Z=Biru)
-  const axesHelper = new THREE.AxesHelper(5);
+  // Sumbu Koordinat (X=Merah, Y=Hijau, Z=Biru/Tinggi)
+  const axesHelper = new THREE.AxesHelper(6);
   axesHelper.position.set(0, 0.01, 0);
   scene.add(axesHelper);
 
@@ -155,7 +155,7 @@ function onWindowResize() {
 
 function resetCameraHome() {
   if (camera && controls) {
-    camera.position.set(12, 10, 14);
+    camera.position.set(15, 12, 18);
     controls.target.set(0, 2, 0);
     controls.update();
   }
@@ -273,10 +273,11 @@ function buildSingleMesh(block) {
     opacity: 1.0
   });
 
+  // Geometri Balok (P = Panjang Sumbu X, T = Tinggi Sumbu Y, L = Lebar Sumbu Z)
   const geo = new THREE.BoxGeometry(p, t, l);
   const mesh = new THREE.Mesh(geo, mat);
   
-  // Posisi Dasar di Atas Workplane
+  // Posisi Awal: Berdiri tepat di atas Workplane Strimin
   mesh.position.set(0, t / 2, 0);
 
   let isPresise = false;
@@ -284,10 +285,10 @@ function buildSingleMesh(block) {
   let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
   while (innerBlock) {
     if (innerBlock.type === 'transformasi_translasi') {
-      // Direct 1-to-1 Translation ke Unit Strimin
-      mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X')) || 0;
-      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; // Sumbu Mendatar Strimin
-      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; // Sumbu Tinggi
+      // Pergeseran 1-to-1 dengan Kotak Strimin
+      mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X')) || 0; // Geser Kanan-Kiri
+      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; // Geser Depan-Belakang
+      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; // Geser Atas-Bawah
     } else if (innerBlock.type === 'transformasi_rotasi_pivot') {
       const angle  = parseFloat(innerBlock.getFieldValue('SUDUT')) || 0;
       const axis   = innerBlock.getFieldValue('SUMBU');
