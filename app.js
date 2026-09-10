@@ -1,6 +1,6 @@
 // Variable Global Three.js & Engine Fisika
 let scene, camera, renderer, controls;
-let worldGroup, gridStrimin;
+let worldGroup, gridStrimin, gridSubStrimin;
 let workspace;
 let isQuaking = false;
 let quakeTime = 0;
@@ -92,14 +92,22 @@ function initThreeJS() {
   worldGroup = new THREE.Group();
   scene.add(worldGroup);
 
-  // PRESISI STRIMIN 1-TO-1 (Grid di-offset 0.5 agar kotak menampung persis koordinat bulat)
-  gridStrimin = new THREE.GridHelper(30, 30, 0x0055ff, 0xa0c4df);
-  gridStrimin.position.set(0.5, 0, 0.5); 
+  // =========================================================================
+  // GARIS STRIMIN PRESISI 1 SATUAN
+  // =========================================================================
+  // 1. Grid Sekunder: Garis-garis halus Setiap 1 Satuan (Kotak Strimin)
+  gridSubStrimin = new THREE.GridHelper(30, 30, 0xb0bec5, 0xc8d6e5);
+  gridSubStrimin.position.set(0, 0, 0);
+  scene.add(gridSubStrimin);
+
+  // 2. Grid Utama: Garis Penanda per 5 Satuan
+  gridStrimin = new THREE.GridHelper(30, 6, 0x0055ff, 0x546e7a);
+  gridStrimin.position.set(0, 0.001, 0); // Sedikit di atas agar tidak z-fighting
   scene.add(gridStrimin);
 
   // Sumbu Koordinat (X=Merah, Y=Hijau/Tinggi, Z=Biru)
   const axesHelper = new THREE.AxesHelper(6);
-  axesHelper.position.set(0, 0.01, 0);
+  axesHelper.position.set(0, 0.02, 0);
   scene.add(axesHelper);
 
   function animate() {
@@ -110,8 +118,10 @@ function initThreeJS() {
       const shakeX = Math.sin(quakeTime * 4) * 0.25;
       const shakeY = Math.cos(quakeTime * 3) * 0.25;
       
-      gridStrimin.position.x = 0.5 + shakeX;
-      gridStrimin.position.z = 0.5 + shakeY;
+      gridStrimin.position.x = shakeX;
+      gridStrimin.position.z = shakeY;
+      gridSubStrimin.position.x = shakeX;
+      gridSubStrimin.position.z = shakeY;
 
       assembledGroups.forEach((groupData) => {
         const grp = groupData.groupObject;
@@ -132,7 +142,8 @@ function initThreeJS() {
         }
       });
     } else {
-      gridStrimin.position.set(0.5, 0, 0.5);
+      gridStrimin.position.set(0, 0.001, 0);
+      gridSubStrimin.position.set(0, 0, 0);
     }
 
     controls.update();
@@ -271,12 +282,12 @@ function buildSingleMesh(block) {
     opacity: 1.0
   });
 
+  // Geometri Balok Murni (Tanpa Offset Manual)
   const geo = new THREE.BoxGeometry(p, t, l);
-  // PIVOT GEOMETRI PRESISI: Di sudut Bawah-Kiri-Depan (0,0,0)
-  geo.translate(p / 2, t / 2, l / 2);
-
   const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(0, 0, 0);
+  
+  // Posisi Duduk Alami di Atas Tanah (Pusat Koordinat 0,0,0)
+  mesh.position.set(p / 2, t / 2, l / 2);
 
   let isPresise = false;
 
