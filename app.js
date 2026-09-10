@@ -92,10 +92,14 @@ function initThreeJS() {
   worldGroup = new THREE.Group();
   scene.add(worldGroup);
 
-  gridStrimin = new THREE.GridHelper(20, 40, 0x0055ff, 0xa0c4df);
+  // =========================================================================
+  // PERBAIKAN STRIMIN: Grid 20x20 unit dibagi 20 kotak (1 Kotak = 1 Unit Presisi)
+  // =========================================================================
+  gridStrimin = new THREE.GridHelper(20, 20, 0x0055ff, 0xa0c4df);
   gridStrimin.position.y = 0;
   scene.add(gridStrimin);
 
+  // Sumbu Koordinat (X=Merah, Y=Hijau, Z=Biru)
   const axesHelper = new THREE.AxesHelper(5);
   axesHelper.position.set(0, 0.01, 0);
   scene.add(axesHelper);
@@ -271,6 +275,8 @@ function buildSingleMesh(block) {
 
   const geo = new THREE.BoxGeometry(p, t, l);
   const mesh = new THREE.Mesh(geo, mat);
+  
+  // Posisi Dasar di Atas Workplane
   mesh.position.set(0, t / 2, 0);
 
   let isPresise = false;
@@ -278,9 +284,10 @@ function buildSingleMesh(block) {
   let innerBlock = block.getInputTargetBlock('SUB_OPERASI');
   while (innerBlock) {
     if (innerBlock.type === 'transformasi_translasi') {
+      // Direct 1-to-1 Translation ke Unit Strimin
       mesh.position.x += parseFloat(innerBlock.getFieldValue('POS_X')) || 0;
-      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; 
-      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; 
+      mesh.position.z += parseFloat(innerBlock.getFieldValue('POS_Y')) || 0; // Sumbu Mendatar Strimin
+      mesh.position.y += parseFloat(innerBlock.getFieldValue('POS_Z')) || 0; // Sumbu Tinggi
     } else if (innerBlock.type === 'transformasi_rotasi_pivot') {
       const angle  = parseFloat(innerBlock.getFieldValue('SUDUT')) || 0;
       const axis   = innerBlock.getFieldValue('SUMBU');
